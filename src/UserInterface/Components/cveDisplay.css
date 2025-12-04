@@ -6,7 +6,8 @@
   display: grid;
   grid-template-columns: 1fr;
   gap: 20px;
-  background: rgba(255, 255, 255, 0.95);
+  background: transparent; /* let the app background show */
+  color: #111; /* ensure readable text color regardless of theme */
   border-radius: 0;
 }
 
@@ -67,8 +68,8 @@
 }
 
 .cve-card {
-  background: white;
-  border: 1px solid #e0e0e0;
+  background: #ffffff; /* keep cards light */
+  border: 1px solid #e6e9ee;
   border-radius: 8px;
   padding: 20px;
   margin-bottom: 20px;
@@ -114,8 +115,8 @@
 }
 
 .cve-score-card {
-  background: white;
-  border: 1px solid #e0e0e0;
+  background: #fafbfc;
+  border: 1px solid #e6e9ee;
   border-left: 5px solid;
   border-radius: 8px;
   padding: 20px;
@@ -146,6 +147,7 @@
 .score-value {
   font-size: 36px;
   font-weight: bold;
+  color: #111; /* explicit dark text for contrast */
 }
 
 .score-label {

@@ -43,14 +43,15 @@ async function fetchEPSS(cveId) {
         if (data.data && data.data.length > 0) {
             // On retourne le score brut (ex: 0.95) et le percentile
             return {
-                score: data.data[0].epss,
-                percentile: data.data[0].percentile
+                score: parseFloat(data.data[0].epss),
+                percentile: parseFloat(data.data[0].percentile),
+                date: data.data[0].date
             };
         }
-        return { score: "N/A", percentile: "N/A" };
+        return null;
     } catch (error) {
         console.error("❌ Erreur EPSS:", error);
-        return { score: "N/A", percentile: "N/A" };
+        return null;
     }
 }
 

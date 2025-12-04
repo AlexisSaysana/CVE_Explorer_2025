@@ -3,6 +3,7 @@
 // It must not access the DOM directly — UI layer handles DOM interactions.
 
 import { fetchNvdCve, fetchEpssCve, checkKevCve, getNvdUrl } from '../Infrastructure/Cve.js';
+import { CVE_NOT_FOUND, INVALID_CVE_FORMAT } from './messages.js';
 
 export function isValidCveCode(cveCode) {
     if (typeof cveCode !== 'string' || cveCode.trim() === '') return false;
@@ -12,7 +13,7 @@ export function isValidCveCode(cveCode) {
 
 async function analyzeCve(cveId) {
     if (!isValidCveCode(cveId)) {
-        throw new Error('Invalid CVE identifier. Expected format: CVE-YYYY-NNNN');
+        throw new Error(INVALID_CVE_FORMAT);
     }
 
     const [nvdResult, epssResult, kevResult] = await Promise.all([
@@ -20,6 +21,11 @@ async function analyzeCve(cveId) {
         fetchEpssCve(cveId).catch(() => null),
         checkKevCve(cveId).catch(() => null),
     ]);
+
+    // If NVD returned null, the CVE probably does not exist -> surface a user-facing error
+    if (!nvdResult || (nvdResult && nvdResult.error)) {
+        throw new Error(CVE_NOT_FOUND);
+    }
 
     const data = {
         id: cveId,
@@ -59,7 +65,7 @@ async function analyzeCve(cveId) {
             return null;
         })(),
         // EPSS can be null or {score}
-        epssScore: data.epss?.score ?? 0,
+        epssScore: data.epss?.score ?? null,
         epss: data.epss || null,
         cwe: data.nvd?.cwe || [],
         affectedProducts: data.nvd?.affectedProducts || [],

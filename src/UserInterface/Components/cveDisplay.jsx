@@ -2,6 +2,7 @@
 
 import React from 'react';
 import './cveDisplay.css';
+import { getSeverityColor, getSeverityLabel, formatEpssPercent, formatCvssValue } from './cveDisplayUtils';
 
 export default function CveDisplay({ data, loading, error }) {
   if (loading) {
@@ -29,22 +30,9 @@ export default function CveDisplay({ data, loading, error }) {
     );
   }
 
-  const getSeverityColor = (score) => {
-    if (score >= 9) return '#d32f2f';
-    if (score >= 7) return '#f57c00';
-    if (score >= 4) return '#fbc02d';
-    return '#388e3c';
-  };
-
-  const getSeverityLabel = (score) => {
-    if (score >= 9) return 'CRITICAL';
-    if (score >= 7) return 'HIGH';
-    if (score >= 4) return 'MEDIUM';
-    return 'LOW';
-  };
-
-  const cvssScore = data.cvssScore?.baseScore || 0;
-  const epssScore = data.epssScore || 0;
+  const cvssObj = data.cvssScore || null;
+  const cvssScoreNum = (cvssObj && (cvssObj.baseScore ?? Number.NaN)) || Number.NaN;
+  const epssScore = typeof data.epssScore === 'number' ? data.epssScore : (data.epss?.score ?? null);
 
   return (
     <div className="cve-display-container">
@@ -64,24 +52,24 @@ export default function CveDisplay({ data, loading, error }) {
       {/* Scores Section */}
       <div className="cve-scores-grid">
         {/* CVSS Score */}
-        <div className="cve-score-card" style={{ borderLeftColor: getSeverityColor(cvssScore) }}>
+        <div className="cve-score-card" style={{ borderLeftColor: getSeverityColor(cvssScoreNum) }}>
           <h3>CVSS Score</h3>
           <div className="score-display">
-            <span className="score-value">{cvssScore.toFixed(1)}</span>
-            <span className="score-label" style={{ color: getSeverityColor(cvssScore) }}>
-              {getSeverityLabel(cvssScore)}
+            <span className="score-value" style={{ color: '#111' }}>{formatCvssValue(cvssObj)}</span>
+            <span className="score-label" style={{ color: getSeverityColor(cvssScoreNum) }}>
+              {getSeverityLabel(cvssScoreNum)}
             </span>
           </div>
-          <p className="score-info">{data.cvssScore?.vector || 'N/A'}</p>
+          <p className="score-info">{cvssObj?.vector || 'N/A'}</p>
         </div>
 
         {/* EPSS Score */}
         <div className="cve-score-card" style={{ borderLeftColor: '#9c27b0' }}>
           <h3>Exploit Probability (EPSS)</h3>
           <div className="score-display">
-            <span className="score-value">{(epssScore * 100).toFixed(1)}%</span>
+            <span className="score-value" style={{ color: '#111' }}>{formatEpssPercent(epssScore)}</span>
             <span className="score-label" style={{ color: '#9c27b0' }}>
-              {epssScore > 0.7 ? 'HIGH' : epssScore > 0.3 ? 'MEDIUM' : 'LOW'}
+              {epssScore > 0.7 ? 'HIGH' : epssScore > 0.3 ? 'MEDIUM' : (epssScore === null ? 'N/A' : 'LOW')}
             </span>
           </div>
         </div>
