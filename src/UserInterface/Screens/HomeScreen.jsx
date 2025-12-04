@@ -1,10 +1,10 @@
 // src/UserInterface/HomeScreen.jsx
 
 import React, { useState } from 'react';
-import CveInput from './Components/Input/CveInput.jsx';
-import CveDisplay from './Components/Display/cveDisplay.jsx';
+import CveInput from '../Components/Input/CveInput.jsx';
+import CveDisplay from '../Components/Display/cveDisplay.jsx';
 import { analyzeCveUseCase } from '../Application/UseCases';
-import ReadFile from './ReadFile.jsx';
+import ReadFile from '../ReadFile.jsx';
 import './HomeScreen.css';
 
 export default function HomeScreen() {
