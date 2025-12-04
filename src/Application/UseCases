@@ -1,1 +1,26 @@
-<!--Test-->
+/**
+ * Valide si une chaîne de caractères respecte le format standard d'un identifiant CVE.
+ *
+ * Le format est typiquement : CVE-AAAA-NNNNN..., où :
+ * - AAAA est l'année (4 chiffres).
+ * - NNNNN... est un identifiant numérique (au moins 4 chiffres).
+ *
+ * @param {string} cveCode - La chaîne à valider.
+ * @returns {boolean} Vrai si le format est valide, Faux sinon.
+ */
+function isValidCveCode(cveCode) {
+    if (typeof cveCode !== 'string' || cveCode.trim() === '') {
+        return false;
+    }
+
+    // Expression régulière pour le format CVE-AAAA-NNNNN...
+    // ^          : Début de la chaîne
+    // CVE-       : Correspond exactement à "CVE-" (insensible à la casse si /i est utilisé, mais ici nous attendons la majuscule)
+    // \d{4}      : Correspond exactement à 4 chiffres (l'année)
+    // -          : Le tiret séparateur
+    // \d{4,}     : Correspond à 4 chiffres ou plus (le numéro séquentiel)
+    // $          : Fin de la chaîne
+    const cvePattern = /^CVE-\d{4}-\d{4,}$/i; // Le 'i' rend la correspondance insensible à la casse (cve- ou Cve-)
+
+    return cvePattern.test(cveCode.trim());
+}
