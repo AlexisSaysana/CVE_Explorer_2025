@@ -1,3 +1,5 @@
+/* Styles scoped for the CVE input and suggestions */
+
 .cve-input-container {
   display: flex;
   align-items: stretch;

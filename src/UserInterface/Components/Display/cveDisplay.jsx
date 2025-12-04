@@ -1,11 +1,10 @@
-// src/UserInterface/Components/cveDisplay.jsx
+// src/UserInterface/Components/Display/cveDisplay.jsx
 
 import React from 'react';
+import ScoreCard from '../Cards/ScoreCard.jsx';
+import EpssCard from '../Cards/EpssCard.jsx';
+import KEVAlert from '../Alerts/KEVAlert.jsx';
 import './cveDisplay.css';
-// utility functions are available in `cveDisplayUtils` but not used here yet
-import ScoreCard from './ScoreCard';
-import EpssCard from './EpssCard';
-import KEVAlert from './KEVAlert';
 
 export default function CveDisplay({ data, loading, error }) {
   if (loading) {
@@ -67,34 +66,13 @@ export default function CveDisplay({ data, loading, error }) {
             {(() => {
               const seen = new Set();
               return data.cwe
-                .map((c) => {
-                  const cweIdText = c.cweId || c.id || '';
-                  const cweNumber = (cweIdText || '').match(/\d+/)?.[0];
-                  const label = `${cweIdText}: ${c.cweName}`;
-                  const key = `${cweNumber || cweIdText}-${c.cweName || ''}`.toLowerCase();
-                  return { cweIdText, cweNumber, label, key };
-                })
-                .filter(({ key }) => {
-                  if (seen.has(key)) return false;
-                  seen.add(key);
-                  return true;
-                })
-                .map(({ cweNumber, label }, idx) => {
-                  const cweUrl = cweNumber ? `https://cwe.mitre.org/data/definitions/${cweNumber}.html` : null;
-                  return cweUrl ? (
-                    <a
-                      key={idx}
-                      className="cwe-badge"
-                      href={cweUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      {label}
-                    </a>
-                  ) : (
-                    <span key={idx} className="cwe-badge">{label}</span>
-                  );
-                });
+                .filter(c => c && c.cweId && !seen.has(c.cweId) && seen.add(c.cweId))
+                .slice(0, 8)
+                .map((cwe, idx) => (
+                  <span key={idx} className="cwe-badge">
+                    {cwe.cweId} — {cwe.cweName || 'Unknown'}
+                  </span>
+                ));
             })()}
           </div>
         </div>
@@ -105,7 +83,7 @@ export default function CveDisplay({ data, loading, error }) {
         </div>
       )}
 
-      {/* KEV - Active Exploit */}
+      {/* Known Exploited Vulnerability */}
       {data.kev && (
         <div className="cve-card alert-card">
           <h3>🔥 Known Exploited Vulnerability (KEV)</h3>
@@ -129,7 +107,7 @@ export default function CveDisplay({ data, loading, error }) {
         </div>
       )}
 
-      {/* Source References */}
+      {/* References */}
       {data.references && data.references.length > 0 && (
         <div className="cve-card">
           <h3>References</h3>

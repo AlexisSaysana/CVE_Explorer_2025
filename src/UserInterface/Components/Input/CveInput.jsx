@@ -1,54 +1,54 @@
-// src/UserInterface/Components/cveInput.jsx
+// src/UserInterface/Components/Input/CveInput.jsx
 
 import React, { useState, useEffect, useRef } from 'react';
-import './cveInput.css';
+import './CveInput.css';
+
+const cvePattern = /^CVE-\d{4}-\d{4,}$/;
 
 export default function CveInput({ cveId, setCveId, onAnalyze, loading }) {
   const [suggestions, setSuggestions] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const abortControllerRef = useRef(null);
-  
+
+  const getLastPart = (value) => {
+    const parts = value.split(',');
+    return parts[parts.length - 1].trim();
+  };
+
   // Check if we have at least one valid CVE
   const cveList = cveId.split(',').map(c => c.trim()).filter(c => c.length > 0);
-  const hasValidCve = cveList.some(c => /^CVE-\d{4}-\d{4,}$/i.test(c));
+  const hasValidCve = cveList.some(c => cvePattern.test(c));
   const isDisabled = loading || !hasValidCve;
 
   // Fast autocomplete with API - only for the last CVE being typed
   useEffect(() => {
-    // Get the last CVE being typed (after the last comma)
-    const parts = cveId.split(',');
-    const lastPart = parts[parts.length - 1].trim().toUpperCase();
+    const lastPart = getLastPart(cveId).toUpperCase();
 
-    if (!lastPart || lastPart.length < 5) {
-      setSuggestions([]);
-      return;
-    }
-
-    // Cancel previous request
+    // Cancel any in-flight request before starting another
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
+      abortControllerRef.current = null;
     }
-    abortControllerRef.current = new AbortController();
 
-    const cvePattern = /^CVE-\d{4}-\d{4,}$/;
-
-    // If exact match, show immediately
-    if (cvePattern.test(lastPart)) {
-      setSuggestions([lastPart]);
-      return;
+    // Ignore short or already-complete CVEs (handled in onChange)
+    if (!lastPart || lastPart.length < 5 || cvePattern.test(lastPart)) {
+      return undefined;
     }
+
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
 
     // Fetch from NVD API immediately
     (async () => {
       try {
         const url = `https://services.nvd.nist.gov/rest/json/cves/2.0?keywordSearch=${lastPart}&resultsPerPage=10`;
-        const res = await fetch(url, { signal: abortControllerRef.current.signal });
+        const res = await fetch(url, { signal: controller.signal });
 
         if (res.ok) {
           const data = await res.json();
           if (data?.vulnerabilities) {
             let ids = data.vulnerabilities.map(v => v.cve.id);
-            
+
             // Sort: prioritize matches that start with input, then by CVE number descending
             ids.sort((a, b) => {
               const aStartsWith = a.startsWith(lastPart) ? 0 : 1;
@@ -58,7 +58,7 @@ export default function CveInput({ cveId, setCveId, onAnalyze, loading }) {
               const bNum = parseInt(b.split('-')[2], 10);
               return bNum - aNum;
             });
-            
+
             setSuggestions(ids.slice(0, 5));
           }
         }
@@ -67,12 +67,15 @@ export default function CveInput({ cveId, setCveId, onAnalyze, loading }) {
           console.warn('NVD API error:', err);
         }
         setSuggestions([]);
+      } finally {
+        abortControllerRef.current = null;
       }
     })();
 
     return () => {
       if (abortControllerRef.current) {
         abortControllerRef.current.abort();
+        abortControllerRef.current = null;
       }
     };
   }, [cveId]);
@@ -101,7 +104,28 @@ export default function CveInput({ cveId, setCveId, onAnalyze, loading }) {
           placeholder="Enter CVE ID(s) - separate with commas (ex: CVE-2024-XXXX, CVE-2023-XXXX)"
           value={cveId}
           onChange={(e) => {
-            setCveId(e.target.value.toUpperCase());
+            const nextValue = e.target.value.toUpperCase();
+            setCveId(nextValue);
+
+            const lastPart = getLastPart(nextValue);
+
+            if (abortControllerRef.current) {
+              abortControllerRef.current.abort();
+              abortControllerRef.current = null;
+            }
+
+            if (!lastPart || lastPart.length < 5) {
+              setSuggestions([]);
+              setShowSuggestions(false);
+              return;
+            }
+
+            if (cvePattern.test(lastPart.toUpperCase())) {
+              setSuggestions([lastPart.toUpperCase()]);
+              setShowSuggestions(true);
+              return;
+            }
+
             setShowSuggestions(true);
           }}
           onKeyPress={handleKeyPress}

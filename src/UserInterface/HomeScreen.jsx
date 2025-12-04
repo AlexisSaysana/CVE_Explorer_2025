@@ -1,8 +1,8 @@
 // src/UserInterface/HomeScreen.jsx
 
 import React, { useState } from 'react';
-import CveInput from './Components/cveInput.jsx';
-import CveDisplay from './Components/cveDisplay.jsx';
+import CveInput from './Components/Input/CveInput.jsx';
+import CveDisplay from './Components/Display/cveDisplay.jsx';
 import { analyzeCveUseCase } from '../Application/UseCases';
 import ReadFile from './ReadFile.jsx';
 import './HomeScreen.css';
@@ -97,20 +97,27 @@ export default function HomeScreen() {
     setBulkResults([]);
 
     try {
-      // Analyze all CVEs sequentially with delay to avoid rate limiting and timeouts
-      const results = [];
-      for (const cveId of cveArray) {
-        try {
-          const data = await analyzeCveUseCase.execute(cveId);
-          results.push({ cveId, data, error: null });
-        } catch (err) {
-          results.push({ cveId, data: null, error: err.message });
+      // Analyze with limited concurrency to stay under API rate limits while keeping speed
+      const concurrency = 5;
+      const results = new Array(cveArray.length);
+      let cursor = 0;
+
+      const worker = async () => {
+        while (true) {
+          const myIndex = cursor++;
+          if (myIndex >= cveArray.length) break;
+          const cveId = cveArray[myIndex];
+          try {
+            const data = await analyzeCveUseCase.execute(cveId);
+            results[myIndex] = { cveId, data, error: null };
+          } catch (err) {
+            results[myIndex] = { cveId, data: null, error: err.message };
+          }
         }
-        // Delay between requests (200ms) to respect API rate limits and prevent timeouts
-        if (cveId !== cveArray[cveArray.length - 1]) {
-          await new Promise(resolve => setTimeout(resolve, 200));
-        }
-      }
+      };
+
+      const workers = Array.from({ length: Math.min(concurrency, cveArray.length) }, () => worker());
+      await Promise.all(workers);
       setBulkResults(results);
     } catch (err) {
       console.error('Bulk analysis error:', err);

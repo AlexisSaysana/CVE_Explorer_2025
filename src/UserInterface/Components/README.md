@@ -10,5 +10,6 @@ Quick orientation for the CVE display area:
 - Styles: `cveDisplay.css` for layout/cards; shared card styles are reused by score cards.
 
 Data flow:
+
 - `HomeScreen.jsx` calls the use case, passes `data` into `cveDisplay.jsx`.
 - `cveDisplay.jsx` delegates to the cards (`ScoreCard`, `EpssCard`, `KEVAlert`) and lists (CWE, products, references).

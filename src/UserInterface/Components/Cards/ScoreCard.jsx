@@ -1,6 +1,6 @@
 import React from 'react';
-import DonutChart from './DonutChart';
-import { getSeverityColor, getSeverityLabel } from './cveDisplayUtils';
+import DonutChart from '../Charts/DonutChart.jsx';
+import { getSeverityColor, getSeverityLabel } from '../Display/cveDisplayUtils.js';
 
 export default function ScoreCard({ cvss, risk, impact }) {
   const score = cvss?.baseScore ?? null;
