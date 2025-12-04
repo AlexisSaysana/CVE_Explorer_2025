@@ -1,40 +1,153 @@
+/* Main container - full viewport */
 .home-screen {
   min-height: 100vh;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  padding: 40px 20px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
+/* Hero section - fixed at top */
 .hero-section {
   text-align: center;
   color: white;
-  margin-bottom: 40px;
-  padding: 40px 20px;
+  padding: 25px 20px;
+  flex-shrink: 0;
+  background: rgba(0, 0, 0, 0.1);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 .hero-section h1 {
-  font-size: 48px;
-  margin: 0 0 12px 0;
+  font-size: 42px;
+  margin: 0 0 8px 0;
   font-weight: 700;
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
 .hero-section p {
-  font-size: 18px;
+  font-size: 16px;
   margin: 0;
   opacity: 0.95;
   font-weight: 300;
 }
 
-@media (max-width: 768px) {
+/* Content wrapper - grows to fill remaining space */
+.content-wrapper {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  gap: 0;
+}
+
+/* Input section - sticky at top of content */
+.input-section {
+  flex-shrink: 0;
+  padding: 20px;
+  background: white;
+  border-bottom: 2px solid #e0e0e0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Results section - scrollable */
+.results-section {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 20px;
+  background: rgba(255, 255, 255, 0.98);
+  width: 100%;
+}
+
+/* Mobile - 480px and below */
+@media (max-width: 480px) {
+  .hero-section {
+    padding: 16px 12px;
+  }
+
   .hero-section h1 {
-    font-size: 36px;
+    font-size: 24px;
+    margin-bottom: 4px;
+  }
+
+  .hero-section p {
+    font-size: 12px;
+  }
+
+  .input-section {
+    padding: 14px;
+  }
+
+  .results-section {
+    padding: 12px;
+  }
+}
+
+/* Tablet - 481px to 768px */
+@media (max-width: 768px) {
+  .hero-section {
+    padding: 18px 15px;
+  }
+
+  .hero-section h1 {
+    font-size: 28px;
+    margin-bottom: 5px;
+  }
+
+  .hero-section p {
+    font-size: 13px;
+  }
+
+  .input-section {
+    padding: 16px;
+    max-width: 100%;
+  }
+
+  .results-section {
+    padding: 15px;
+  }
+}
+
+/* Desktop - 769px and above */
+@media (min-width: 769px) {
+  .hero-section {
+    padding: 25px 20px;
+  }
+
+  .hero-section h1 {
+    font-size: 42px;
   }
 
   .hero-section p {
     font-size: 16px;
   }
 
-  .home-screen {
-    padding: 20px 12px;
+  .input-section {
+    padding: 24px;
+    max-width: 100%;
+  }
+
+  .results-section {
+    padding: 25px;
+  }
+}
+
+/* Large desktop - 1440px and above */
+@media (min-width: 1440px) {
+  .hero-section h1 {
+    font-size: 48px;
+  }
+
+  .input-section {
+    padding: 30px;
+  }
+
+  .results-section {
+    padding: 30px;
   }
 }

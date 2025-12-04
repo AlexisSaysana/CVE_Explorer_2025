@@ -33,5 +33,3 @@ export default function CveInput({ cveId, setCveId, onAnalyze, loading }) {
     </div>
   );
 }
-  },
-});

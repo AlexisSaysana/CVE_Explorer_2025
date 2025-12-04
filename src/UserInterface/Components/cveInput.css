@@ -1,57 +1,88 @@
 .cve-input-container {
   display: flex;
-  gap: 10px;
-  margin-bottom: 30px;
-  max-width: 500px;
-  margin-left: auto;
-  margin-right: auto;
+  align-items: stretch;
+  gap: 12px;
   width: 100%;
+  height: auto;
 }
 
 .cve-input {
   flex: 1;
-  padding: 12px 15px;
-  border: 2px solid #e0e0e0;
-  border-radius: 8px;
+  padding: 14px 16px;
+  border: 2px solid #ddd;
+  border-radius: 6px;
   font-size: 16px;
-  transition: border-color 0.3s;
-  background: #fff;
+  font-family: inherit;
+  background: white;
+  color: #333;
+  transition: all 0.2s;
 }
 
 .cve-input:focus {
   outline: none;
-  border-color: #007aff;
-  box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.1);
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
 }
 
 .cve-input:disabled {
-  background-color: #f5f5f5;
+  background: #f5f5f5;
   color: #999;
 }
 
 .cve-button {
-  padding: 12px 24px;
-  background-color: #007aff;
+  padding: 14px 32px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
   border: none;
-  border-radius: 8px;
-  font-size: 16px;
+  border-radius: 6px;
+  font-size: 15px;
   font-weight: 600;
+  font-family: inherit;
   cursor: pointer;
-  transition: background-color 0.3s;
+  transition: all 0.2s;
+  white-space: nowrap;
+  flex-shrink: 0;
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
 }
 
 .cve-button:hover:not(:disabled) {
-  background-color: #0051d5;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 14px rgba(102, 126, 234, 0.4);
+}
+
+.cve-button:active:not(:disabled) {
+  transform: translateY(0);
 }
 
 .cve-button:disabled {
-  background-color: #ccc;
+  background: #ccc;
+  box-shadow: none;
   cursor: not-allowed;
 }
 
-@media (max-width: 600px) {
+/* Mobile: Stack vertically */
+@media (max-width: 640px) {
   .cve-input-container {
     flex-direction: column;
+    gap: 10px;
+  }
+
+  .cve-input {
+    width: 100%;
+    padding: 14px 14px;
+    font-size: 16px;
+  }
+
+  .cve-button {
+    width: 100%;
+    padding: 14px 24px;
+    font-size: 15px;
+  }
+}
+
+/* Desktop: Horizontal layout */
+@media (min-width: 641px) {
+  .cve-input-container {
+    flex-direction: row;
   }
 }

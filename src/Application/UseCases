@@ -1,50 +1,52 @@
-/**
- * Valide si une chaîne de caractères respecte le format standard d'un identifiant CVE.
- *
- * Le format est typiquement : CVE-AAAA-NNNNN..., où :
- * - AAAA est l'année (4 chiffres).
- * - NNNNN... est un identifiant numérique (au moins 4 chiffres).
- *
- * @param {string} cveCode - La chaîne à valider.
- * @returns {boolean} Vrai si le format est valide, Faux sinon.
- */
-function isValidCveCode(cveCode) {
-    if (typeof cveCode !== 'string' || cveCode.trim() === '') {
-        return false;
-    }
+// UseCases module
+// This file provides application-level helpers and a use-case-compatible API
+// It must not access the DOM directly — UI layer handles DOM interactions.
 
-    // Expression régulière pour le format CVE-AAAA-NNNNN...
-    // ^          : Début de la chaîne
-    // CVE-       : Correspond exactement à "CVE-" (insensible à la casse si /i est utilisé, mais ici nous attendons la majuscule)
-    // \d{4}      : Correspond exactement à 4 chiffres (l'année)
-    // -          : Le tiret séparateur
-    // \d{4,}     : Correspond à 4 chiffres ou plus (le numéro séquentiel)
-    // $          : Fin de la chaîne
-    const cvePattern = /^CVE-\d{4}-\d{4,}$/i; // Le 'i' rend la correspondance insensible à la casse (cve- ou Cve-)
+import { fetchNvdCve, fetchEpssCve, checkKevCve, getNvdUrl } from '../Infrastructure/Cve.js';
 
+export function isValidCveCode(cveCode) {
+    if (typeof cveCode !== 'string' || cveCode.trim() === '') return false;
+    const cvePattern = /^CVE-\d{4}-\d{4,}$/i;
     return cvePattern.test(cveCode.trim());
 }
 
-// La fonction isValidCveCode... (que j'ai donnée plus haut)
-
-document.getElementById('cveForm').addEventListener('submit', function(event) {
-    // Empêche la soumission du formulaire par défaut
-    event.preventDefault();
-
-    const cveInput = document.getElementById('cveInput');
-    const cveCode = cveInput.value;
-    const messageElement = document.getElementById('validationMessage');
-
-    if (isValidCveCode(cveCode)) {
-        messageElement.textContent = "Code CVE valide ! Soumission en cours...";
-        messageElement.style.color = "green";
-        
-        // Ici, vous ajouteriez le code pour envoyer les données au serveur
-        // par exemple : this.submit();
-        
-    } else {
-        messageElement.textContent = "Erreur : Le format du code CVE est invalide (doit être CVE-AAAA-NNNN...).";
-        messageElement.style.color = "red";
-        cveInput.focus(); // Met le focus sur le champ pour correction
+async function analyzeCve(cveId) {
+    if (!isValidCveCode(cveId)) {
+        throw new Error('Invalid CVE identifier. Expected format: CVE-YYYY-NNNN');
     }
-});
+
+    const [nvdResult, epssResult, kevResult] = await Promise.all([
+        fetchNvdCve(cveId).catch(err => ({ error: String(err) })),
+        fetchEpssCve(cveId).catch(() => null),
+        checkKevCve(cveId).catch(() => null),
+    ]);
+
+    const data = {
+        id: cveId,
+        nvd: nvdResult && !nvdResult.error ? nvdResult : null,
+        epss: epssResult || null,
+        kev: kevResult || null,
+        urls: { nvd: getNvdUrl(cveId) },
+    };
+
+    data.risk = (function calc(nvd, epss, kev) {
+        let score = 0;
+        if (nvd && nvd.cvssScore && typeof nvd.cvssScore.baseScore === 'number') score += nvd.cvssScore.baseScore;
+        if (epss && typeof epss.score === 'number') score += epss.score * 5;
+        if (kev) score += 3;
+        const normalizedScore = Math.min(10, Math.round((score / 12) * 10));
+        let level = 'Low';
+        if (normalizedScore >= 8) level = 'Critical';
+        else if (normalizedScore >= 6) level = 'High';
+        else if (normalizedScore >= 4) level = 'Medium';
+        return { score: normalizedScore, level };
+    })(data.nvd, data.epss, data.kev);
+
+    return data;
+}
+
+export const analyzeCveUseCase = {
+    execute: analyzeCve,
+};
+
+export default analyzeCveUseCase;

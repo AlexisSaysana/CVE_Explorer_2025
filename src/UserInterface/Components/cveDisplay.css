@@ -1,13 +1,20 @@
 .cve-display-container {
+  width: 100%;
+  max-width: 100%;
+  margin: 0;
   padding: 20px;
-  max-width: 900px;
-  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 20px;
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 0;
 }
 
 .cve-header {
-  margin-bottom: 30px;
+  margin-bottom: 10px;
   border-bottom: 2px solid #e0e0e0;
   padding-bottom: 15px;
+  grid-column: 1;
 }
 
 .cve-header h2 {
@@ -85,12 +92,25 @@
   line-height: 1.6;
 }
 
-/* Scores Grid */
+/* Scores Grid - responsive */
 .cve-scores-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 20px;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 15px;
   margin-bottom: 20px;
+  grid-column: 1 / -1;
+}
+
+@media (min-width: 768px) {
+  .cve-scores-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1200px) {
+  .cve-scores-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
 
 .cve-score-card {
@@ -194,9 +214,11 @@
   color: #856404;
 }
 
-@media (max-width: 768px) {
+/* Responsive Design */
+@media (max-width: 480px) {
   .cve-display-container {
     padding: 12px;
+    gap: 12px;
   }
 
   .cve-header h2 {
@@ -205,9 +227,90 @@
 
   .cve-scores-grid {
     grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .score-value {
+    font-size: 24px;
+  }
+
+  .cve-card {
+    padding: 12px;
+    margin-bottom: 12px;
+  }
+
+  .cwe-list {
+    gap: 6px;
+  }
+
+  .cwe-badge {
+    font-size: 12px;
+    padding: 6px 10px;
+  }
+}
+
+/* Tablet */
+@media (max-width: 768px) {
+  .cve-display-container {
+    padding: 15px;
+  }
+
+  .cve-header h2 {
+    font-size: 24px;
+  }
+
+  .cve-scores-grid {
+    grid-template-columns: 1fr;
   }
 
   .score-value {
     font-size: 28px;
+  }
+}
+
+/* Desktop - use columns for wider layouts */
+@media (min-width: 1200px) {
+  .cve-display-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-auto-flow: dense;
+  }
+
+  .cve-header {
+    grid-column: 1 / -1;
+  }
+
+  .cve-scores-grid {
+    grid-column: 1 / -1;
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .cve-card:nth-child(3) {
+    grid-column: 1;
+  }
+
+  .cve-card:nth-child(4) {
+    grid-column: 2;
+  }
+
+  .product-list,
+  .reference-list {
+    columns: 2;
+    column-gap: 30px;
+  }
+}
+
+/* Large desktop - 3 colonnes */
+@media (min-width: 1600px) {
+  .cve-display-container {
+    grid-template-columns: 1fr 1fr 1fr;
+  }
+
+  .cve-header {
+    grid-column: 1 / -1;
+  }
+
+  .cve-scores-grid {
+    grid-column: 1 / -1;
   }
 }

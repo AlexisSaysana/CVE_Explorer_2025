@@ -103,19 +103,3 @@ export async function getFullCveData(cveId) {
         timestamp: new Date().toISOString()
     };
 }
-
-// 1. On importe la fonction principale
-import { getFullCveData } from './apiService.js';
-
-// 2. On l'utilise
-async function lancerRecherche() {
-    const resultat = await getFullCveData("CVE-2021-44228");
-    
-    if (resultat.error) {
-        console.log("Erreur : " + resultat.error);
-    } else {
-        console.log("Score CVSS :", resultat.technical.cvssScore);
-        console.log("Probabilité EPSS :", resultat.prediction.score);
-        console.log("Est exploitée ? :", resultat.activeThreat);
-    }
-}
