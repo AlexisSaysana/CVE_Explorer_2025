@@ -24,3 +24,27 @@ function isValidCveCode(cveCode) {
 
     return cvePattern.test(cveCode.trim());
 }
+
+// La fonction isValidCveCode... (que j'ai donnée plus haut)
+
+document.getElementById('cveForm').addEventListener('submit', function(event) {
+    // Empêche la soumission du formulaire par défaut
+    event.preventDefault();
+
+    const cveInput = document.getElementById('cveInput');
+    const cveCode = cveInput.value;
+    const messageElement = document.getElementById('validationMessage');
+
+    if (isValidCveCode(cveCode)) {
+        messageElement.textContent = "Code CVE valide ! Soumission en cours...";
+        messageElement.style.color = "green";
+        
+        // Ici, vous ajouteriez le code pour envoyer les données au serveur
+        // par exemple : this.submit();
+        
+    } else {
+        messageElement.textContent = "Erreur : Le format du code CVE est invalide (doit être CVE-AAAA-NNNN...).";
+        messageElement.style.color = "red";
+        cveInput.focus(); // Met le focus sur le champ pour correction
+    }
+});
