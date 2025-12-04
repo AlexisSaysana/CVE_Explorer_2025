@@ -60,9 +60,9 @@ export default function CveDisplay({ data, loading, error }) {
       {data.kev && <KEVAlert kev={data.kev} />}
 
       {/* CWE Information */}
-      {data.cwe && data.cwe.length > 0 && (
+      {data.cwe && data.cwe.length > 0 ? (
         <div className="cve-card">
-          <h3>Related CWE</h3>
+          <h3>Related CWE (Common Weakness Enumeration)</h3>
           <div className="cwe-list">
             {(() => {
               const seen = new Set();
@@ -97,6 +97,11 @@ export default function CveDisplay({ data, loading, error }) {
                 });
             })()}
           </div>
+        </div>
+      ) : (
+        <div className="cve-card">
+          <h3>Related CWE (Common Weakness Enumeration)</h3>
+          <p className="no-info-text">ℹ️ No specific weakness classification available from NVD for this CVE.</p>
         </div>
       )}
 

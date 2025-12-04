@@ -190,6 +190,22 @@
   font-weight: 500;
 }
 
+.cwe-badge:hover {
+  background: #bbdefb;
+  cursor: pointer;
+}
+
+.no-info-text {
+  margin: 0;
+  color: #666;
+  font-size: 14px;
+  font-style: italic;
+  padding: 12px;
+  background: #f5f5f5;
+  border-left: 3px solid #ffc107;
+  border-radius: 4px;
+}
+
 /* Lists */
 .product-list,
 .reference-list {

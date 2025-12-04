@@ -22,7 +22,10 @@ async function fetchNVD(cveId) {
         // Build a normalized CVE object with consistent fields
         const cvss = pickCvss(item.metrics);
 
-        const cweList = (item.weaknesses || []).flatMap(w => (w.description || []).map(d => ({ cweId: d.value, cweName: getCweName(d.value) }))).slice(0,5);
+        const cweList = (item.weaknesses || [])
+            .flatMap(w => (w.description || []).map(d => ({ cweId: d.value, cweName: getCweName(d.value) })))
+            .filter(cwe => cwe.cweId && !cwe.cweId.toLowerCase().includes('noinfo') && cwe.cweId !== 'NVD-CWE-Other')
+            .slice(0, 5);
 
         const affected = extractAffectedProducts(item.configurations);
 
