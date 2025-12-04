@@ -1,10 +1,11 @@
 import './App.css'
+import React from 'react';
+import HomeScreen from './UserInterface/HomeScreen';
 
 function App() {
   return (
-    <div className="container">
-      <h1>CVE Explorer</h1>
-      {/* Ici viendra le champ de saisie (Input) et les résultats (Output) */}
+    <div className="app">
+      <HomeScreen />
     </div>
   )
 }

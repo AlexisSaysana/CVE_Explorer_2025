@@ -1,0 +1,40 @@
+.home-screen {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: 40px 20px;
+}
+
+.hero-section {
+  text-align: center;
+  color: white;
+  margin-bottom: 40px;
+  padding: 40px 20px;
+}
+
+.hero-section h1 {
+  font-size: 48px;
+  margin: 0 0 12px 0;
+  font-weight: 700;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.hero-section p {
+  font-size: 18px;
+  margin: 0;
+  opacity: 0.95;
+  font-weight: 300;
+}
+
+@media (max-width: 768px) {
+  .hero-section h1 {
+    font-size: 36px;
+  }
+
+  .hero-section p {
+    font-size: 16px;
+  }
+
+  .home-screen {
+    padding: 20px 12px;
+  }
+}

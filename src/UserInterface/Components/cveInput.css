@@ -1,0 +1,57 @@
+.cve-input-container {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 30px;
+  max-width: 500px;
+  margin-left: auto;
+  margin-right: auto;
+  width: 100%;
+}
+
+.cve-input {
+  flex: 1;
+  padding: 12px 15px;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  font-size: 16px;
+  transition: border-color 0.3s;
+  background: #fff;
+}
+
+.cve-input:focus {
+  outline: none;
+  border-color: #007aff;
+  box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.1);
+}
+
+.cve-input:disabled {
+  background-color: #f5f5f5;
+  color: #999;
+}
+
+.cve-button {
+  padding: 12px 24px;
+  background-color: #007aff;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.cve-button:hover:not(:disabled) {
+  background-color: #0051d5;
+}
+
+.cve-button:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+}
+
+@media (max-width: 600px) {
+  .cve-input-container {
+    flex-direction: column;
+  }
+}
