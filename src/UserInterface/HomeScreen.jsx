@@ -25,19 +25,39 @@ export default function HomeScreen() {
       return;
     }
 
-    setLoading(true);
-    setError(null);
-    setCveData(null);
+    // Parse multiple CVEs separated by commas
+    const cveList = cveId
+      .split(',')
+      .map(c => c.trim())
+      .filter(c => /^CVE-\d{4}-\d{4,}$/i.test(c))
+      .map(c => c.toUpperCase());
 
-    try {
-      // Use the AnalyzeCveUseCase to fetch and analyze CVE
-      const data = await analyzeCveUseCase.execute(cveId);
-      setCveData(data);
-    } catch (err) {
-      setError(err.message || 'Error fetching CVE data. Please try again.');
-      console.error('Analysis error:', err);
-    } finally {
-      setLoading(false);
+    if (cveList.length === 0) {
+      setError('Please enter valid CVE ID(s).');
+      return;
+    }
+
+    // If single CVE, show in main display. If multiple, show as bulk results
+    if (cveList.length === 1) {
+      setLoading(true);
+      setError(null);
+      setCveData(null);
+
+      try {
+        const data = await analyzeCveUseCase.execute(cveList[0]);
+        setCveData(data);
+      } catch (err) {
+        setError(err.message || 'Error fetching CVE data. Please try again.');
+        console.error('Analysis error:', err);
+      } finally {
+        setLoading(false);
+      }
+    } else {
+      // Multiple CVEs: analyze as bulk
+      setBulkCveList(cveList);
+      setBulkResults([]);
+      setBulkError(null);
+      analyzeBulk(cveList);
     }
   };
 
@@ -77,15 +97,20 @@ export default function HomeScreen() {
     setBulkResults([]);
 
     try {
-      // Analyze all CVEs in parallel
-      const promises = cveArray.map((cveId) =>
-        analyzeCveUseCase
-          .execute(cveId)
-          .then((data) => ({ cveId, data, error: null }))
-          .catch((err) => ({ cveId, data: null, error: err.message }))
-      );
-
-      const results = await Promise.all(promises);
+      // Analyze all CVEs sequentially with delay to avoid rate limiting and timeouts
+      const results = [];
+      for (const cveId of cveArray) {
+        try {
+          const data = await analyzeCveUseCase.execute(cveId);
+          results.push({ cveId, data, error: null });
+        } catch (err) {
+          results.push({ cveId, data: null, error: err.message });
+        }
+        // Delay between requests (200ms) to respect API rate limits and prevent timeouts
+        if (cveId !== cveArray[cveArray.length - 1]) {
+          await new Promise(resolve => setTimeout(resolve, 200));
+        }
+      }
       setBulkResults(results);
     } catch (err) {
       console.error('Bulk analysis error:', err);

@@ -7,6 +7,7 @@ export default function ReadFile({ onData }) {
   const [isDragging, setIsDragging] = useState(false);
   const [fileName, setFileName] = useState(null);
   const [rowCount, setRowCount] = useState(0);
+  const fileInputRef = React.useRef(null);
 
   const processFile = (file) => {
     if (!file) return;
@@ -52,6 +53,10 @@ export default function ReadFile({ onData }) {
     processFile(evt.target.files?.[0]);
   };
 
+  const handleBrowseClick = () => {
+    fileInputRef.current?.click();
+  };
+
   const handleDragOver = (evt) => {
     evt.preventDefault();
     evt.stopPropagation();
@@ -79,6 +84,7 @@ export default function ReadFile({ onData }) {
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
+        onClick={handleBrowseClick}
       >
         <div className="upload-content">
           <div className="upload-icon">📄</div>
@@ -90,11 +96,12 @@ export default function ReadFile({ onData }) {
               </>
             ) : (
               <>
-                Drag & drop a CSV/TSV file here or <label className="upload-link">click to browse</label>
+                Drag & drop a CSV/TSV file here or <span className="upload-link">click to browse</span>
               </>
             )}
           </p>
           <input
+            ref={fileInputRef}
             type="file"
             className="file-input"
             accept=".csv,.tsv,.txt"

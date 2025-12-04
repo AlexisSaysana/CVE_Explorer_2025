@@ -9,41 +9,69 @@
 
 // --- 1. Récupération des données techniques (NVD) ---
 async function fetchNVD(cveId) {
-    try {
-        // On appelle l'API officielle du gouvernement US
-        const response = await fetch(`https://services.nvd.nist.gov/rest/json/cves/2.0?cveId=${cveId}`);
-        const data = await response.json();
+    const maxRetries = 5;
+    let lastError;
+    
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        try {
+            // Create a timeout controller (10 seconds per request)
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 10000);
+            
+            // On appelle l'API officielle du gouvernement US
+            const response = await fetch(
+                `https://services.nvd.nist.gov/rest/json/cves/2.0?cveId=${cveId}`,
+                { signal: controller.signal }
+            );
+            
+            clearTimeout(timeoutId);
+            
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}`);
+            }
+            
+            const data = await response.json();
 
-        // Si la liste est vide, la CVE n'existe pas
-        if (data.vulnerabilities.length === 0) return null;
+            // Si la liste est vide, la CVE n'existe pas
+            if (data.vulnerabilities.length === 0) return null;
 
-        const item = data.vulnerabilities[0].cve;
+            const item = data.vulnerabilities[0].cve;
 
-        // Build a normalized CVE object with consistent fields
-        const cvss = pickCvss(item.metrics);
+            // Build a normalized CVE object with consistent fields
+            const cvss = pickCvss(item.metrics);
 
-        const cweList = (item.weaknesses || [])
-            .flatMap(w => (w.description || []).map(d => ({ cweId: d.value, cweName: getCweName(d.value) })))
-            .filter(cwe => cwe.cweId && !cwe.cweId.toLowerCase().includes('noinfo') && cwe.cweId !== 'NVD-CWE-Other')
-            .slice(0, 5);
+            const cweList = (item.weaknesses || [])
+                .flatMap(w => (w.description || []).map(d => ({ cweId: d.value, cweName: getCweName(d.value) })))
+                .filter(cwe => cwe.cweId && !cwe.cweId.toLowerCase().includes('noinfo') && cwe.cweId !== 'NVD-CWE-Other')
+                .slice(0, 5);
 
-        const affected = extractAffectedProducts(item.configurations);
+            const affected = extractAffectedProducts(item.configurations);
 
-        return {
-            description: item.descriptions?.[0]?.value || "Aucune description disponible.",
-            cvss: cvss, // { baseScore, vector, severity, version } or null
-            severity: cvss?.severity || 'UNKNOWN',
-            published: item.published || item.publishedDate || null,
-            lastModified: item.lastModified || item.lastModifiedDate || null,
-            cwe: cweList,
-            affectedProducts: affected,
-            references: item.references?.map(ref => ref.url) || [],
-            impact: deriveImpactFromVector(cvss?.vector),
-        };
-    } catch (error) {
-        console.error("❌ Erreur NVD:", error);
-        return null;
+            return {
+                description: item.descriptions?.[0]?.value || "Aucune description disponible.",
+                cvss: cvss, // { baseScore, vector, severity, version } or null
+                severity: cvss?.severity || 'UNKNOWN',
+                published: item.published || item.publishedDate || null,
+                lastModified: item.lastModified || item.lastModifiedDate || null,
+                cwe: cweList,
+                affectedProducts: affected,
+                references: item.references?.map(ref => ref.url) || [],
+                impact: deriveImpactFromVector(cvss?.vector),
+            };
+        } catch (error) {
+            lastError = error;
+            console.warn(`❌ NVD Attempt ${attempt}/${maxRetries} failed:`, error.message);
+            
+            // Exponential backoff before retry (500ms, 1s, 2s, 4s, 8s)
+            if (attempt < maxRetries) {
+                const delay = Math.pow(2, attempt - 1) * 500;
+                await new Promise(resolve => setTimeout(resolve, delay));
+            }
+        }
     }
+    
+    console.error(`❌ NVD API failed after ${maxRetries} attempts for ${cveId}:`, lastError);
+    return null;
 }
 
 // Helper: pick the best available CVSS metric and normalize it

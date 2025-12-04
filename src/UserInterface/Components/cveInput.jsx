@@ -3,55 +3,45 @@
 import React, { useState, useEffect, useRef } from 'react';
 import './cveInput.css';
 
-// Simple in-memory cache for suggestions
-const suggestionCache = new Map();
-const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
-
 export default function CveInput({ cveId, setCveId, onAnalyze, loading }) {
   const [suggestions, setSuggestions] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const abortControllerRef = useRef(null);
-  const isDisabled = loading || cveId.length < 5;
+  
+  // Check if we have at least one valid CVE
+  const cveList = cveId.split(',').map(c => c.trim()).filter(c => c.length > 0);
+  const hasValidCve = cveList.some(c => /^CVE-\d{4}-\d{4,}$/i.test(c));
+  const isDisabled = loading || !hasValidCve;
 
-  // Auto-complete with optimized debounce and cache
+  // Fast autocomplete with API - only for the last CVE being typed
   useEffect(() => {
-    if (!cveId || cveId.length < 3) {
+    // Get the last CVE being typed (after the last comma)
+    const parts = cveId.split(',');
+    const lastPart = parts[parts.length - 1].trim().toUpperCase();
+
+    if (!lastPart || lastPart.length < 5) {
       setSuggestions([]);
       return;
     }
 
-    // Cancel previous request if any
+    // Cancel previous request
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
     }
     abortControllerRef.current = new AbortController();
 
-    const timer = setTimeout(async () => {
-      const cveUpper = cveId.trim().toUpperCase();
-      const cvePattern = /^CVE-\d{4}-\d{4,}$/;
+    const cvePattern = /^CVE-\d{4}-\d{4,}$/;
 
-      // Check cache first
-      if (suggestionCache.has(cveUpper)) {
-        const cached = suggestionCache.get(cveUpper);
-        if (Date.now() - cached.timestamp < CACHE_DURATION) {
-          setSuggestions(cached.data);
-          return;
-        } else {
-          suggestionCache.delete(cveUpper);
-        }
-      }
+    // If exact match, show immediately
+    if (cvePattern.test(lastPart)) {
+      setSuggestions([lastPart]);
+      return;
+    }
 
-      // If input matches CVE format exactly, suggest it immediately
-      if (cvePattern.test(cveUpper)) {
-        const result = [cveUpper];
-        suggestionCache.set(cveUpper, { data: result, timestamp: Date.now() });
-        setSuggestions(result);
-        return;
-      }
-
-      // Try API for partial matches
+    // Fetch from NVD API immediately
+    (async () => {
       try {
-        const url = `https://services.nvd.nist.gov/rest/json/cves/2.0?keywordSearch=${cveUpper}&resultsPerPage=10`;
+        const url = `https://services.nvd.nist.gov/rest/json/cves/2.0?keywordSearch=${lastPart}&resultsPerPage=10`;
         const res = await fetch(url, { signal: abortControllerRef.current.signal });
 
         if (res.ok) {
@@ -59,33 +49,28 @@ export default function CveInput({ cveId, setCveId, onAnalyze, loading }) {
           if (data?.vulnerabilities) {
             let ids = data.vulnerabilities.map(v => v.cve.id);
             
-            // Sort to prioritize matches that start with the input year
+            // Sort: prioritize matches that start with input, then by CVE number descending
             ids.sort((a, b) => {
-              const aStartsWith = a.startsWith(cveUpper) ? 0 : 1;
-              const bStartsWith = b.startsWith(cveUpper) ? 0 : 1;
+              const aStartsWith = a.startsWith(lastPart) ? 0 : 1;
+              const bStartsWith = b.startsWith(lastPart) ? 0 : 1;
               if (aStartsWith !== bStartsWith) return aStartsWith - bStartsWith;
-              // Then sort by CVE ID numerically (descending = newest first)
               const aNum = parseInt(a.split('-')[2], 10);
               const bNum = parseInt(b.split('-')[2], 10);
               return bNum - aNum;
             });
             
-            ids = ids.slice(0, 5);
-            suggestionCache.set(cveUpper, { data: ids, timestamp: Date.now() });
-            setSuggestions(ids);
-            return;
+            setSuggestions(ids.slice(0, 5));
           }
         }
-      } catch {
-        // API failed or request aborted
+      } catch (err) {
+        if (err.name !== 'AbortError') {
+          console.warn('NVD API error:', err);
+        }
+        setSuggestions([]);
       }
-
-      // Fallback: just suggest the input if it looks like CVE
-      setSuggestions([]);
-    }, 150); // Reduced from 400ms to 150ms
+    })();
 
     return () => {
-      clearTimeout(timer);
       if (abortControllerRef.current) {
         abortControllerRef.current.abort();
       }
@@ -93,7 +78,10 @@ export default function CveInput({ cveId, setCveId, onAnalyze, loading }) {
   }, [cveId]);
 
   const handleSelectSuggestion = (suggestion) => {
-    setCveId(suggestion);
+    // Replace the last CVE with the suggestion
+    const parts = cveId.split(',');
+    parts[parts.length - 1] = suggestion;
+    setCveId(parts.join(', '));
     setShowSuggestions(false);
   };
 
@@ -110,7 +98,7 @@ export default function CveInput({ cveId, setCveId, onAnalyze, loading }) {
         <input
           type="text"
           className="cve-input"
-          placeholder="Enter a CVE ID (ex: CVE-2024-XXXX)"
+          placeholder="Enter CVE ID(s) - separate with commas (ex: CVE-2024-XXXX, CVE-2023-XXXX)"
           value={cveId}
           onChange={(e) => {
             setCveId(e.target.value.toUpperCase());
