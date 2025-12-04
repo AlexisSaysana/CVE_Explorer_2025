@@ -2,7 +2,10 @@
 
 import React from 'react';
 import './cveDisplay.css';
-import { getSeverityColor, getSeverityLabel, formatEpssPercent, formatCvssValue } from './cveDisplayUtils';
+// utility functions are available in `cveDisplayUtils` but not used here yet
+import ScoreCard from './ScoreCard';
+import EpssCard from './EpssCard';
+import KEVAlert from './KEVAlert';
 
 export default function CveDisplay({ data, loading, error }) {
   if (loading) {
@@ -31,8 +34,6 @@ export default function CveDisplay({ data, loading, error }) {
   }
 
   const cvssObj = data.cvssScore || null;
-  const cvssScoreNum = (cvssObj && (cvssObj.baseScore ?? Number.NaN)) || Number.NaN;
-  const epssScore = typeof data.epssScore === 'number' ? data.epssScore : (data.epss?.score ?? null);
 
   return (
     <div className="cve-display-container">
@@ -49,31 +50,14 @@ export default function CveDisplay({ data, loading, error }) {
         </div>
       )}
 
-      {/* Scores Section */}
+      {/* Scores Section - use dedicated small components */}
       <div className="cve-scores-grid">
-        {/* CVSS Score */}
-        <div className="cve-score-card" style={{ borderLeftColor: getSeverityColor(cvssScoreNum) }}>
-          <h3>CVSS Score</h3>
-          <div className="score-display">
-            <span className="score-value" style={{ color: '#111' }}>{formatCvssValue(cvssObj)}</span>
-            <span className="score-label" style={{ color: getSeverityColor(cvssScoreNum) }}>
-              {getSeverityLabel(cvssScoreNum)}
-            </span>
-          </div>
-          <p className="score-info">{cvssObj?.vector || 'N/A'}</p>
-        </div>
-
-        {/* EPSS Score */}
-        <div className="cve-score-card" style={{ borderLeftColor: '#9c27b0' }}>
-          <h3>Exploit Probability (EPSS)</h3>
-          <div className="score-display">
-            <span className="score-value" style={{ color: '#111' }}>{formatEpssPercent(epssScore)}</span>
-            <span className="score-label" style={{ color: '#9c27b0' }}>
-              {epssScore > 0.7 ? 'HIGH' : epssScore > 0.3 ? 'MEDIUM' : (epssScore === null ? 'N/A' : 'LOW')}
-            </span>
-          </div>
-        </div>
+        <ScoreCard cvss={cvssObj} risk={data.risk} impact={data.impact} />
+        <EpssCard epss={data.epss} />
       </div>
+
+      {/* KEV Alert */}
+      {data.kev && <KEVAlert kev={data.kev} />}
 
       {/* CWE Information */}
       {data.cwe && data.cwe.length > 0 && (

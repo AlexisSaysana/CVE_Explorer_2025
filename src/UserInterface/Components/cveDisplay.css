@@ -96,7 +96,7 @@
 /* Scores Grid - responsive */
 .cve-scores-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
   gap: 15px;
   margin-bottom: 20px;
   grid-column: 1 / -1;
@@ -134,6 +134,18 @@
   font-size: 16px;
   color: #555;
   text-transform: uppercase;
+.badge {
+  background: #eef6ff;
+  padding: 6px 10px;
+  border-radius: 12px;
+  color: #1e4db7;
+  font-weight: 600;
+  font-size: 12px;
+}
+.scorecard-main .badge {
+  background: #f3f6ff;
+}
+.kev-alert a { color: #856404; text-decoration: underline; }
   font-weight: 600;
 }
 

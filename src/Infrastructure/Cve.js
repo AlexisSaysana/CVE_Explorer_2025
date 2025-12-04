@@ -19,19 +19,92 @@ async function fetchNVD(cveId) {
 
         const item = data.vulnerabilities[0].cve;
 
-        // On extrait proprement les infos utiles
+        // Build a normalized CVE object with consistent fields
+        const cvss = pickCvss(item.metrics);
+
+        const cweList = (item.weaknesses || []).flatMap(w => (w.description || []).map(d => ({ cweId: d.value, cweName: getCweName(d.value) }))).slice(0,5);
+
+        const affected = extractAffectedProducts(item.configurations);
+
         return {
-            description: item.descriptions[0]?.value || "Aucune description disponible.",
-            // Le score CVSS n'est pas toujours présent (ex: vieilles CVE), on gère le cas
-            cvssScore: item.metrics?.cvssMetricV31?.[0]?.cvssData?.baseScore || "N/A",
-            severity: item.metrics?.cvssMetricV31?.[0]?.cvssData?.baseSeverity || "UNKNOWN",
-            // On récupère les références (liens) pour la doc
-            references: item.references?.map(ref => ref.url) || []
+            description: item.descriptions?.[0]?.value || "Aucune description disponible.",
+            cvss: cvss, // { baseScore, vector, severity, version } or null
+            severity: cvss?.severity || 'UNKNOWN',
+            published: item.published || item.publishedDate || null,
+            lastModified: item.lastModified || item.lastModifiedDate || null,
+            cwe: cweList,
+            affectedProducts: affected,
+            references: item.references?.map(ref => ref.url) || [],
+            impact: deriveImpactFromVector(cvss?.vector),
         };
     } catch (error) {
         console.error("❌ Erreur NVD:", error);
         return null;
     }
+}
+
+// Helper: pick the best available CVSS metric and normalize it
+function pickCvss(metrics) {
+    if (!metrics) return null;
+    const m31 = metrics.cvssMetricV31?.[0];
+    const m30 = metrics.cvssMetricV30?.[0];
+    const m2  = metrics.cvssMetricV2?.[0];
+    const chosen = m31 || m30 || m2;
+    if (!chosen) return null;
+    const data = chosen.cvssData || chosen.cvss || null;
+    if (!data) return null;
+    const baseScore = Number(data.baseScore ?? NaN);
+    return {
+        baseScore: Number.isFinite(baseScore) ? baseScore : null,
+        vector: data.vectorString || data.vector || null,
+        severity: data.baseSeverity || null,
+        version: m31 ? '3.1' : (m30 ? '3.0' : '2.0'),
+    };
+}
+
+// Very small CWE name mapper to have friendly names
+function getCweName(cweId) {
+    const map = {
+        'CWE-79': 'Improper Neutralization of Input',
+        'CWE-89': 'SQL Injection',
+        'CWE-119': 'Buffer Over-read',
+    };
+    return map[cweId] || 'Unknown Weakness';
+}
+
+// Parse CPE strings in configurations to get vendor/product/version
+function extractAffectedProducts(configurations) {
+    if (!configurations) return [];
+    const products = new Set();
+    configurations.forEach(config => {
+        config.nodes?.forEach(node => {
+            node.cpeMatch?.forEach(match => {
+                const cpe = match.criteria;
+                if (cpe) {
+                    const parts = cpe.split(':');
+                    if (parts.length > 4) {
+                        const vendor = parts[3] || '';
+                        const product = parts[4] || '';
+                        const version = parts[5] || '';
+                        products.add(`${vendor}:${product}:${version}`);
+                    }
+                }
+            });
+        });
+    });
+    return Array.from(products).slice(0, 10);
+}
+
+// Derive a simple impact/exploitability summary from a CVSS vector string
+function deriveImpactFromVector(vector) {
+    if (!vector) return { impact: 'Unknown', exploitability: 'Unknown' };
+    const parts = vector.split('/').slice(1).map(p => p.split(':'));
+    const map = {};
+    parts.forEach(([k, v]) => { map[k] = v; });
+    const impactScore = ['C','I','A'].reduce((sum, k) => sum + (map[k] === 'H' ? 1 : (map[k] === 'L' ? 0.5 : 0)), 0);
+    const impact = impactScore >= 2.5 ? 'High' : (impactScore >= 1.5 ? 'Medium' : 'Low');
+    const exploitability = map['AV'] === 'N' ? 'High' : (map['AV'] === 'A' ? 'Low' : 'Medium');
+    return { impact, exploitability };
 }
 
 // --- 2. Récupération du score de prédiction (EPSS) ---
