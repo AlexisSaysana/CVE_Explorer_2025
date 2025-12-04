@@ -64,11 +64,38 @@ export default function CveDisplay({ data, loading, error }) {
         <div className="cve-card">
           <h3>Related CWE</h3>
           <div className="cwe-list">
-            {data.cwe.map((c, idx) => (
-              <span key={idx} className="cwe-badge">
-                {c.cweId}: {c.cweName}
-              </span>
-            ))}
+            {(() => {
+              const seen = new Set();
+              return data.cwe
+                .map((c) => {
+                  const cweIdText = c.cweId || c.id || '';
+                  const cweNumber = (cweIdText || '').match(/\d+/)?.[0];
+                  const label = `${cweIdText}: ${c.cweName}`;
+                  const key = `${cweNumber || cweIdText}-${c.cweName || ''}`.toLowerCase();
+                  return { cweIdText, cweNumber, label, key };
+                })
+                .filter(({ key }) => {
+                  if (seen.has(key)) return false;
+                  seen.add(key);
+                  return true;
+                })
+                .map(({ cweNumber, label }, idx) => {
+                  const cweUrl = cweNumber ? `https://cwe.mitre.org/data/definitions/${cweNumber}.html` : null;
+                  return cweUrl ? (
+                    <a
+                      key={idx}
+                      className="cwe-badge"
+                      href={cweUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      {label}
+                    </a>
+                  ) : (
+                    <span key={idx} className="cwe-badge">{label}</span>
+                  );
+                });
+            })()}
           </div>
         </div>
       )}

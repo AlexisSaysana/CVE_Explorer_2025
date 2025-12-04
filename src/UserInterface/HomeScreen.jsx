@@ -1,10 +1,10 @@
 // src/UserInterface/HomeScreen.jsx
 
 import React, { useState } from 'react';
-import CveInput from './Components/cveInput';
-import CveDisplay from './Components/cveDisplay';
+import CveInput from './Components/cveInput.jsx';
+import CveDisplay from './Components/cveDisplay.jsx';
 import { analyzeCveUseCase } from '../Application/UseCases';
-import ReadFile from './ReadFile/ReadFile'
+import ReadFile from './ReadFile.jsx';
 import './HomeScreen.css';
 
 export default function HomeScreen() {
@@ -12,8 +12,6 @@ export default function HomeScreen() {
   const [cveData, setCveData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [uploadedData, setUploadedData] = useState(null);
-
   const handleAnalyze = async () => {
     if (!cveId) {
       setError('Please enter a CVE ID.');
@@ -37,9 +35,8 @@ export default function HomeScreen() {
   };
 
   const handleUploaded = (rows) => {
-    // rows is an array of arrays (parsed CSV). For now we store it and log it.
-    setUploadedData(rows)
-    console.log('Uploaded rows:', rows)
+    // rows is an array of arrays (parsed CSV). For now we just log it.
+    console.log('Uploaded rows:', rows);
   }
 
   return (
