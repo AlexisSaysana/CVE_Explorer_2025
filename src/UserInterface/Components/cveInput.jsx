@@ -1,6 +1,5 @@
 // src/UserInterface/Components/cveInput.jsx
 
-import React from 'react';
 import './cveInput.css';
 
 export default function CveInput({ cveId, setCveId, onAnalyze, loading }) {
