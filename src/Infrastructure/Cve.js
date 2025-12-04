@@ -103,3 +103,13 @@ export async function getFullCveData(cveId) {
         timestamp: new Date().toISOString()
     };
 }
+
+// Backwards-compatible named exports expected by the Application layer
+export const fetchNvdCve = fetchNVD;
+export const fetchEpssCve = fetchEPSS;
+export const checkKevCve = fetchKEV;
+
+/**
+ * Utility: build a direct NVD URL for a CVE
+ */
+export const getNvdUrl = (cveId) => `https://nvd.nist.gov/vuln/detail/${cveId}`;

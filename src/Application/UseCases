@@ -29,9 +29,12 @@ async function analyzeCve(cveId) {
         urls: { nvd: getNvdUrl(cveId) },
     };
 
-    data.risk = (function calc(nvd, epss, kev) {
+    // Determine risk using available numeric values
+    const risk = (function calc(nvd, epss, kev) {
         let score = 0;
-        if (nvd && nvd.cvssScore && typeof nvd.cvssScore.baseScore === 'number') score += nvd.cvssScore.baseScore;
+        // nvd.cvssScore might be a number or an object with baseScore
+        const nvdScore = nvd?.cvssScore?.baseScore ?? nvd?.cvssScore ?? null;
+        if (typeof nvdScore === 'number') score += nvdScore;
         if (epss && typeof epss.score === 'number') score += epss.score * 5;
         if (kev) score += 3;
         const normalizedScore = Math.min(10, Math.round((score / 12) * 10));
@@ -42,7 +45,31 @@ async function analyzeCve(cveId) {
         return { score: normalizedScore, level };
     })(data.nvd, data.epss, data.kev);
 
-    return data;
+    // Flatten the shape to match what the UI components expect
+    const flattened = {
+        id: data.id,
+        description: data.nvd?.description || data.nvd?.technical?.description || null,
+        published: data.nvd?.published || data.nvd?.technical?.published || null,
+        // Normalize CVSS to an object with baseScore and vector
+        cvssScore: (function () {
+            const raw = data.nvd?.cvssScore ?? null;
+            if (!raw) return null;
+            if (typeof raw === 'number') return { baseScore: raw, vector: data.nvd?.cvssVector || null };
+            if (typeof raw === 'object' && raw.baseScore !== undefined) return raw;
+            return null;
+        })(),
+        // EPSS can be null or {score}
+        epssScore: data.epss?.score ?? 0,
+        epss: data.epss || null,
+        cwe: data.nvd?.cwe || [],
+        affectedProducts: data.nvd?.affectedProducts || [],
+        references: data.nvd?.references || [],
+        kev: data.kev ? (typeof data.kev === 'boolean' ? { exploited: data.kev } : data.kev) : null,
+        urls: data.urls,
+        risk,
+    };
+
+    return flattened;
 }
 
 export const analyzeCveUseCase = {
