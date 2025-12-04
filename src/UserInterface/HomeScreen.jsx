@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import CveInput from './Components/cveInput';
 import CveDisplay from './Components/cveDisplay';
 import { analyzeCveUseCase } from '../Application/UseCases';
+import ReadFile from './ReadFile/ReadFile'
 import './HomeScreen.css';
 
 export default function HomeScreen() {
@@ -11,6 +12,7 @@ export default function HomeScreen() {
   const [cveData, setCveData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [uploadedData, setUploadedData] = useState(null);
 
   const handleAnalyze = async () => {
     if (!cveId) {
@@ -34,6 +36,12 @@ export default function HomeScreen() {
     }
   };
 
+  const handleUploaded = (rows) => {
+    // rows is an array of arrays (parsed CSV). For now we store it and log it.
+    setUploadedData(rows)
+    console.log('Uploaded rows:', rows)
+  }
+
   return (
     <div className="home-screen">
       <div className="hero-section">
@@ -42,6 +50,9 @@ export default function HomeScreen() {
       </div>
 
       <div className="content-wrapper">
+        <div className="upload-section">
+          <ReadFile onData={handleUploaded} />
+        </div>
         <div className="input-section">
           <CveInput
             cveId={cveId}
