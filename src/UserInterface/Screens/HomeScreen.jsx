@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import CveInput from '../Components/Input/CveInput.jsx';
 import CveDisplay from '../Components/Display/cveDisplay.jsx';
-import { analyzeCveUseCase } from '../Application/UseCases';
+import { analyzeCveUseCase } from '../../Application/UseCases.js';
 import ReadFile from '../ReadFile.jsx';
 import './HomeScreen.css';
 

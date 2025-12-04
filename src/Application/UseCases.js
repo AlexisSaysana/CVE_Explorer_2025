@@ -3,7 +3,7 @@
 // It must not access the DOM directly — UI layer handles DOM interactions.
 
 import { fetchNvdCve, fetchEpssCve, checkKevCve, getNvdUrl } from '../Infrastructure/Cve.js';
-import { CVE_NOT_FOUND, INVALID_CVE_FORMAT } from './messages.js';
+import { CVE_NOT_FOUND, INVALID_CVE_FORMAT } from './constants/messages.js';
 
 export function isValidCveCode(cveCode) {
     if (typeof cveCode !== 'string' || cveCode.trim() === '') return false;
