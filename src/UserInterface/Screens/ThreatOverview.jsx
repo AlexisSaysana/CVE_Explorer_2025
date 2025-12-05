@@ -199,7 +199,7 @@ export default function ThreatOverview() {
               <ol>
                 {data.topEpss.map((c) => (
                   <li key={c.id}>
-                    <strong>{c.id}</strong> — Prob. {(Number(c.epss) * 100).toFixed(0)}%
+                    <strong>{c.id}</strong> — Prob. {(Number(c.epss) * 100).toFixed(1)}%
                   </li>
                 ))}
               </ol>
@@ -212,7 +212,7 @@ export default function ThreatOverview() {
 
             <section className="card">
               <h3>📊 Average EPSS</h3>
-              <div className="big-value">{(Number(data.avgEpss) * 100).toFixed(0)}%</div>
+              <div className="big-value">{(Number(data.avgEpss) * 100).toFixed(1)}%</div>
             </section>
 
             <section className="card">
