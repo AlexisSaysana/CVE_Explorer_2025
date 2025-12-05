@@ -50,7 +50,7 @@ export default function ThreatOverview() {
 
   const handleRun = async () => {
     if (!keyword || keyword.trim().length === 0) {
-      setError('Veuillez entrer un mot-clé.');
+      setError('Please enter a keyword.');
       return;
     }
 
@@ -80,7 +80,7 @@ export default function ThreatOverview() {
       const rawVulnerabilities = await nvdGateway.searchByKeyword(keyword, pubStartDate, pubEndDate, 200);
 
       if (!rawVulnerabilities || rawVulnerabilities.length === 0) {
-        setError(`Aucune CVE trouvée pour "${keyword}" dans cette période.`);
+        setError(`No CVE found for "${keyword}" in this period.`);
         setLoading(false);
         return;
       }
@@ -140,7 +140,7 @@ export default function ThreatOverview() {
       setCache(cacheKey, summary, 600);
     } catch (err) {
       console.error('ThreatOverview error:', err);
-      setError(`Erreur: ${err.message}`);
+      setError(`Error: ${err.message}`);
     } finally {
       setLoading(false);
     }
@@ -148,14 +148,9 @@ export default function ThreatOverview() {
 
   return (
     <div className="threat-overview">
-      <div className="threat-header">
-        <h1>🎯 Threat Overview</h1>
-        <p>Analysez les tendances de CVEs par secteur ou produit</p>
-      </div>
-
       <div className="threat-controls">
         <label>
-          Mot-clé&nbsp;:
+          Keyword:
           <input
             type="text"
             value={keyword}
@@ -164,16 +159,16 @@ export default function ThreatOverview() {
           />
         </label>
         <label>
-          Période&nbsp;:
+          Period:
           <select value={duration} onChange={(e) => setDuration(e.target.value)}>
-            <option value="1m">1 mois</option>
-            <option value="3m">3 mois</option>
-            <option value="6m">6 mois</option>
-            <option value="1y">1 an</option>
+            <option value="1m">1 month</option>
+            <option value="3m">3 months</option>
+            <option value="6m">6 months</option>
+            <option value="1y">1 year</option>
           </select>
         </label>
         <button onClick={handleRun} disabled={loading}>
-          {loading ? 'Chargement...' : 'Analyser'}
+          {loading ? 'Loading...' : 'Analyze'}
         </button>
       </div>
 
@@ -182,14 +177,14 @@ export default function ThreatOverview() {
 
         {!data && !error && (
           <div className="threat-empty">
-            Entrez un mot-clé et cliquez sur <strong>Analyser</strong> pour afficher l'aperçu des menaces.
+            Enter a keyword and click <strong>Analyze</strong> to display threat overview.
           </div>
         )}
 
         {data && (
           <div className="threat-grid">
             <section className="card">
-              <h3>🔥 Top 10 CVEs (par CVSS)</h3>
+              <h3>🔥 Top 10 CVEs (by CVSS)</h3>
               <ol>
                 {data.topCvss.map((c) => (
                   <li key={c.id}>
@@ -211,27 +206,27 @@ export default function ThreatOverview() {
             </section>
 
             <section className="card">
-              <h3>📊 CVSS Moyen</h3>
+              <h3>📊 Average CVSS</h3>
               <div className="big-value">{data.avgCvss}</div>
             </section>
 
             <section className="card">
-              <h3>📊 EPSS Moyen</h3>
+              <h3>📊 Average EPSS</h3>
               <div className="big-value">{(Number(data.avgEpss) * 100).toFixed(0)}%</div>
             </section>
 
             <section className="card">
-              <h3>🧩 Faiblesse la plus fréquente</h3>
+              <h3>🧩 Most Common Weakness</h3>
               <div className="big-value small">{data.mostFreqCwe}</div>
             </section>
 
             <section className="card">
-              <h3>⚠️ CVE déjà exploitées (KEV)</h3>
+              <h3>⚠️ Known Exploited CVEs (KEV)</h3>
               <div className="big-value">{data.kevCount}</div>
             </section>
 
             <section className="card wide">
-              <h3>📈 Total CVEs trouvées</h3>
+              <h3>📈 Total CVEs Found</h3>
               <div className="big-value">{data.totalCves}</div>
             </section>
           </div>

@@ -109,8 +109,8 @@ export default function HomeScreen() {
   return (
     <div className="home-screen">
       <div className="hero-section">
-        <h1>CVE Explorer</h1>
-        <p>Analyze and visualize Common Vulnerabilities and Exposures</p>
+        <h1>{activeTab === 'threat' ? 'Threat Overview' : 'CVE Explorer'}</h1>
+        <p>{activeTab === 'threat' ? 'Analyze CVE trends by sector or product' : 'Analyze and visualize Common Vulnerabilities and Exposures'}</p>
         <div className="tabs">
           <button className={activeTab === 'explore' ? 'active' : ''} onClick={() => setActiveTab('explore')}>Explorer</button>
           <button className={activeTab === 'threat' ? 'active' : ''} onClick={() => setActiveTab('threat')}>Threat Overview</button>

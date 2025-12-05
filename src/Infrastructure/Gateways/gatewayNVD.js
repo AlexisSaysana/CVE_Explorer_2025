@@ -132,6 +132,41 @@ export class NvdHttpCveGateway {
      * @returns {Promise<array>} Liste des CVEs correspondants
      */
     async searchByKeyword(keyword, pubStartDate = null, pubEndDate = null, resultsPerPage = 100) {
+        // NVD API limitation: max 120 days range for keyword searches
+        // If range > 120 days, split into chunks
+        if (pubStartDate && pubEndDate) {
+            const start = new Date(pubStartDate);
+            const end = new Date(pubEndDate);
+            const diffDays = (end - start) / (1000 * 60 * 60 * 24);
+            
+            // If range is more than 120 days, split into 120-day chunks
+            if (diffDays > 120) {
+                const chunks = [];
+                let currentStart = new Date(start);
+                
+                while (currentStart < end) {
+                    let currentEnd = new Date(currentStart);
+                    currentEnd.setDate(currentEnd.getDate() + 120);
+                    
+                    if (currentEnd > end) {
+                        currentEnd = end;
+                    }
+                    
+                    const chunkStartStr = currentStart.toISOString().split('.')[0] + '.000';
+                    const chunkEndStr = currentEnd.toISOString().split('.')[0] + '.000';
+                    
+                    const chunkResults = await fetchNVDApiKeywordSearch(keyword, chunkStartStr, chunkEndStr, resultsPerPage);
+                    chunks.push(...chunkResults);
+                    
+                    // Move to next chunk
+                    currentStart.setDate(currentStart.getDate() + 121);
+                }
+                
+                return chunks;
+            }
+        }
+        
+        // Normal case: range <= 120 days or no date range
         return fetchNVDApiKeywordSearch(keyword, pubStartDate, pubEndDate, resultsPerPage);
     }
 }
