@@ -1,26 +1,16 @@
-// src/UserInterface/Screens/HomeScreen.jsx
-// Responsabilité UNIQUE: Orchestrer l'UI (input, display, upload)
-// Délègue la logique métier aux services
+// Main CVE exploration screen with single/bulk analysis and file upload
 
 import React, { useState } from 'react';
-import CveInput from '../Components/Input/CveInput.jsx';
 import CveDisplay from '../Components/Display/cveDisplay.jsx';
-import { analyzeCveUseCase } from '../../Application/UseCases.js';
-import { processBulkCves } from '../../Application/Services/BulkCveProcessor.js';
-import ReadFile from '../Components/Upload/ReadFile.jsx';
-import { parseCveList } from '../Services/CveValidator.js';
-import { extractCvesFromRows } from '../Services/FileParser.js';
-import ThreatOverview from './ThreatOverview.jsx';
-import './HomeScreen.css';
-
-// Helper utility for color
-function getSeverityColor(score) {
-  if (typeof score !== 'number') return '#388e3c';
-  if (score >= 9) return '#d32f2f';
-  if (score >= 7) return '#f57c00';
-  if (score >= 4) return '#fbc02d';
-  return '#388e3c';
-}
+import { analyzeCveUseCase } from '../../Application/useCases.js';
+import { processBulkCves } from '../../Application/Services/bulkCveProcessor.js';
+import { parseCveList } from '../Services/serviceValidationCVE.js';
+import { extractCvesFromRows } from '../Services/serviceFileParser.js';
+import { getSeverityColor } from '../Components/Display/cveDisplayUtils.js';
+import CveInput from '../Components/Input/CveInput.jsx';
+import ReadFile from '../Components/Upload/readFile.jsx';
+import ThreatOverview from './screenThreat.jsx';
+import './screenExplorer.css';
 
 export default function HomeScreen() {
   const [activeTab, setActiveTab] = useState('explore');

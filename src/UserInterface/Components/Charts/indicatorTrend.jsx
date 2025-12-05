@@ -1,13 +1,10 @@
 import React from 'react';
 import './TrendIndicator.css';
 
-export default function TrendIndicator({ data, prevData }) {
+export default function TrendIndicator({ data }) {
   if (!data) return null;
 
   const currentCount = data.length;
-  const prevCount = 0; // Previous period not implemented yet
-  const change = currentCount - prevCount;
-  const percentChange = currentCount; // Just show current count
 
   return (
     <div className="trend-indicator">

@@ -1,5 +1,6 @@
-// Infrastructure/Gateways/gatewayKEV.js
-// Responsabilité UNIQUE: Vérifier si une CVE est dans CISA KEV
+// Checks if CVE is in CISA Known Exploited Vulnerabilities catalog
+
+import { normalizeCveId } from '../../Application/constants/messages.js';
 
 async function fetchKEVApi(cveId) {
     try {
@@ -14,13 +15,8 @@ async function fetchKEVApi(cveId) {
 }
 
 export class KevHttpCveGateway {
-    /**
-     * Récupère le statut KEV pour une CVE.
-     * @param {string} cveId 
-     * @returns {Promise<object | null>} Objet KEV (si exploité) ou null
-     */
     async getStatus(cveId) {
-        const cleanId = cveId.trim().toUpperCase();
+        const cleanId = normalizeCveId(cveId);
         return fetchKEVApi(cleanId);
     }
 }

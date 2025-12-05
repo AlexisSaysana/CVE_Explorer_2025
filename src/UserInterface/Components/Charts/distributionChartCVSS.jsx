@@ -1,5 +1,5 @@
 import React from 'react';
-import './CvssDistributionChart.css';
+import './distributionChartCVSS.css';
 
 export default function CvssDistributionChart({ data }) {
   if (!data || data.length === 0) return null;

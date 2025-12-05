@@ -1,5 +1,4 @@
-// Application/Services/BulkCveProcessor.js
-// Responsabilité UNIQUE: Gérer l'analyse bulk de plusieurs CVEs avec concurrence
+// Processes multiple CVEs concurrently with controlled parallelism
 
 export async function processBulkCves(cveArray, useCase, concurrency = 5) {
     const results = new Array(cveArray.length);

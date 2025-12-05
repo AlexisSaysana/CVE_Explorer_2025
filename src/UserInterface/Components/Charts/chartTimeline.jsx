@@ -1,5 +1,5 @@
 import React from 'react';
-import './TimelineChart.css';
+import './chartTimeline.css';
 
 export default function TimelineChart({ data }) {
   if (!data || data.length === 0) return null;
@@ -32,7 +32,7 @@ export default function TimelineChart({ data }) {
     <div className="timeline-chart">
       <h3>📈 CVE Timeline (Last 6 Months)</h3>
       <div className="timeline-container">
-        {sortedMonths.map((item, idx) => (
+        {sortedMonths.map((item) => (
           <div key={item.month} className="timeline-item">
             <div className="timeline-bar-wrapper">
               <div

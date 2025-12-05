@@ -1,13 +1,12 @@
-// UserInterface/Services/CveValidator.js
-// Responsabilité UNIQUE: Valider et parser les CVE IDs du formulaire
+// Validates and parses CVE IDs from user input
+
+import { CVE_PATTERN } from '../../Application/constants/messages.js';
 
 export function parseCveList(cveInput) {
-    const cvePattern = /^CVE-\d{4}-\d{4,}$/i;
-    
     const cveList = cveInput
         .split(',')
         .map(c => c.trim())
-        .filter(c => cvePattern.test(c))
+        .filter(c => CVE_PATTERN.test(c))
         .map(c => c.toUpperCase());
     
     return cveList;

@@ -1,5 +1,4 @@
-// src/UserInterface/Components/Display/cveDisplay.jsx
-// Responsabilité UNIQUE: Gérer les états (loading, error, empty) et déléguer au layout
+// Handles loading/error states and delegates rendering to layout component
 
 import React from 'react';
 import CveDisplayLayout from './cveDisplayLayout.jsx';

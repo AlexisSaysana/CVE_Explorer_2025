@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import './CvssTrendChart.css';
+import './trendChartCVSS.css';
 
 export default function CvssTrendChart({ data }) {
   const [hoveredPoint, setHoveredPoint] = useState(null);
@@ -147,7 +147,7 @@ export default function CvssTrendChart({ data }) {
         </svg>
         
         <div className="trend-labels">
-          {sortedMonths.map((item, idx) => (
+          {sortedMonths.map((item) => (
             <div key={item.month} className="trend-month">
               <div className="month-label">{item.label}</div>
               <div className="month-value">{item.avgCvss.toFixed(1)}</div>

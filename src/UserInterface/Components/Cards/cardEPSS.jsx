@@ -1,6 +1,6 @@
 import React from 'react';
 import { formatEpssPercent } from '../Display/cveDisplayUtils.js';
-import DonutChart from '../Charts/DonutChart.jsx';
+import DonutChart from '../Charts/chartDonut.jsx';
 
 export default function EpssCard({ epss }) {
   const score = typeof epss?.score === 'number' ? epss.score : null;

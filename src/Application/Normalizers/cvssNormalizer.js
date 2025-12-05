@@ -1,6 +1,6 @@
-// Application/Normalizers/cvssNormalizer.js
-// Responsabilité UNIQUE: Normaliser les données CVSS brutes de NVD
+// Extracts and normalizes CVSS data from NVD response
 
+// Prefers CVSS v3.1, falls back to v3.0, then v2.0
 function pickCvss(metrics) {
     if (!metrics) return null;
     const m31 = metrics.cvssMetricV31?.[0];

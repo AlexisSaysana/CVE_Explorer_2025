@@ -1,23 +1,18 @@
-// Infrastructure/Gateways/gatewayNVD.js
-// Responsabilité UNIQUE: Fetch NVD API + retry logic
-// Retourne les données brutes NVD, SANS transformation
+// Fetches data from NVD API with retry logic and optional API key support
 
-// Get API key from environment variable (optional)
 const getNvdApiKey = () => {
   return import.meta.env.VITE_NVD_API_KEY || null;
 };
 
-// Build NVD API URL with optional API key
 const buildNvdUrl = (params) => {
   const baseUrl = 'https://services.nvd.nist.gov/rest/json/cves/2.0';
   const url = new URL(baseUrl);
   
-  // Add all params
   Object.entries(params).forEach(([key, value]) => {
     url.searchParams.append(key, value);
   });
   
-  // Add API key if available (improves rate limits)
+  // Attach API key if available for better rate limits
   const apiKey = getNvdApiKey();
   if (apiKey) {
     url.searchParams.append('apiKey', apiKey);
@@ -113,33 +108,18 @@ async function fetchNVDApiKeywordSearch(keyword, pubStartDate, pubEndDate, resul
 }
 
 export class NvdHttpCveGateway {
-    /**
-     * Récupère les données NVD brutes (sans transformation).
-     * @param {string} cveId 
-     * @returns {Promise<object | null>} Données NVD brutes de l'API
-     */
     async getRawData(cveId) {
-        const cleanId = cveId.trim().toUpperCase();
-        return fetchNVDApi(cleanId);
+        return fetchNVDApi(cveId);
     }
 
-    /**
-     * Recherche les CVEs par mot-clé.
-     * @param {string} keyword 
-     * @param {string} pubStartDate Date de publication minimale (format ISO)
-     * @param {string} pubEndDate Date de publication maximale (format ISO)
-     * @param {number} resultsPerPage Nombre de résultats
-     * @returns {Promise<array>} Liste des CVEs correspondants
-     */
+    // Searches CVEs by keyword with automatic chunking for date ranges > 120 days
     async searchByKeyword(keyword, pubStartDate = null, pubEndDate = null, resultsPerPage = 100) {
-        // NVD API limitation: max 120 days range for keyword searches
-        // If range > 120 days, split into chunks
+        // NVD API has 120-day limit for keyword searches, split into chunks if needed
         if (pubStartDate && pubEndDate) {
             const start = new Date(pubStartDate);
             const end = new Date(pubEndDate);
             const diffDays = (end - start) / (1000 * 60 * 60 * 24);
             
-            // If range is more than 120 days, split into 120-day chunks
             if (diffDays > 120) {
                 const chunks = [];
                 let currentStart = new Date(start);
@@ -158,7 +138,6 @@ export class NvdHttpCveGateway {
                     const chunkResults = await fetchNVDApiKeywordSearch(keyword, chunkStartStr, chunkEndStr, resultsPerPage);
                     chunks.push(...chunkResults);
                     
-                    // Move to next chunk
                     currentStart.setDate(currentStart.getDate() + 121);
                 }
                 
@@ -166,7 +145,6 @@ export class NvdHttpCveGateway {
             }
         }
         
-        // Normal case: range <= 120 days or no date range
         return fetchNVDApiKeywordSearch(keyword, pubStartDate, pubEndDate, resultsPerPage);
     }
 }

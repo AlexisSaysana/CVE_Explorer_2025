@@ -1,14 +1,8 @@
-// UserInterface/Services/CacheService.js
-// Responsabilité UNIQUE: Gérer le cache sessionStorage
+// SessionStorage cache with TTL support
 
 const CACHE_PREFIX = 'cve_cache_';
 
-/**
- * Store data in cache with TTL (Time To Live)
- * @param {string} key - Cache key
- * @param {any} value - Data to cache
- * @param {number} ttlSeconds - Time to live in seconds
- */
+// Stores data with expiration time
 export function setCache(key, value, ttlSeconds) {
     try {
         const expiry = Date.now() + (ttlSeconds * 1000);
@@ -19,11 +13,7 @@ export function setCache(key, value, ttlSeconds) {
     }
 }
 
-/**
- * Get data from cache if not expired
- * @param {string} key - Cache key
- * @returns {any|null} - Cached data or null if expired/missing
- */
+// Returns cached data if still valid, null otherwise
 export function getCache(key) {
     try {
         const cached = sessionStorage.getItem(CACHE_PREFIX + key);
@@ -42,9 +32,6 @@ export function getCache(key) {
     }
 }
 
-/**
- * Clear all cache entries
- */
 export function clearCache() {
     try {
         Object.keys(sessionStorage)

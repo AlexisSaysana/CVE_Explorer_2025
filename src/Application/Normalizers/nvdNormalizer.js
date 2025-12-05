@@ -1,5 +1,4 @@
-// Application/Normalizers/nvdNormalizer.js
-// Responsabilité UNIQUE: Transformer les données NVD brutes en objet métier
+// Transforms raw NVD API response into normalized business object
 
 import { normalizeCvss } from './cvssNormalizer.js';
 import { normalizeCweList } from './cweNormalizer.js';

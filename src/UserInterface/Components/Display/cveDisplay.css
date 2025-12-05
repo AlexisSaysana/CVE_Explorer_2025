@@ -193,11 +193,16 @@
   border-radius: 20px;
   font-size: 13px;
   font-weight: 500;
+  text-decoration: none;
+  display: inline-block;
+  transition: all 0.2s ease;
 }
 
 .cwe-badge:hover {
-  background: #bbdefb;
-  cursor: pointer;
+  background: #1976d2;
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(25, 118, 210, 0.3);
 }
 
 .no-info-text {

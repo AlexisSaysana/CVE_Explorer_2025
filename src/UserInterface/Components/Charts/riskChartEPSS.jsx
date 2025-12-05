@@ -1,5 +1,5 @@
 import React from 'react';
-import './EpssRiskChart.css';
+import './riskChartEPSS.css';
 
 export default function EpssRiskChart({ data }) {
   if (!data || data.length === 0) return null;

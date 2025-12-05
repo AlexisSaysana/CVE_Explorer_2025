@@ -1,9 +1,5 @@
-// Application/Services/ThreatStatsCalculator.js
-// Responsabilité UNIQUE: Calculer les statistiques pour l'analyse de menaces
+// Statistical calculations for threat analysis
 
-/**
- * Calculate average CVSS and EPSS scores
- */
 export function calculateAverages(cves) {
     if (!cves || cves.length === 0) {
         return { avgCvss: '0.0', avgEpss: '0.000' };
@@ -15,9 +11,7 @@ export function calculateAverages(cves) {
     return { avgCvss, avgEpss };
 }
 
-/**
- * Group CVEs by CWE and return top N
- */
+// Returns most frequent CWEs
 export function getTopCwes(cves, topN = 5) {
     const cweFreq = {};
     
@@ -33,17 +27,11 @@ export function getTopCwes(cves, topN = 5) {
         .map(([cwe, count]) => ({ cwe, count }));
 }
 
-/**
- * Sort CVEs by CVSS score (descending)
- */
 export function sortByCvss(cves, limit = null) {
     const sorted = [...cves].sort((a, b) => (Number(b.cvss) || 0) - (Number(a.cvss) || 0));
     return limit ? sorted.slice(0, limit) : sorted;
 }
 
-/**
- * Sort CVEs by EPSS score (descending)
- */
 export function sortByEpss(cves, limit = null) {
     const sorted = [...cves].sort((a, b) => (Number(b.epss) || 0) - (Number(a.epss) || 0));
     return limit ? sorted.slice(0, limit) : sorted;

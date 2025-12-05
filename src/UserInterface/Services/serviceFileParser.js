@@ -1,5 +1,4 @@
-// UserInterface/Services/FileParser.js
-// Responsabilité UNIQUE: Parser les fichiers CVE et extraire les IDs
+// Extracts CVE IDs from uploaded file rows
 
 const CVE_PATTERN = /CVE-\d{4}-\d{4,}/i;
 

@@ -1,5 +1,4 @@
-// Application/Normalizers/productsNormalizer.js
-// Responsabilité UNIQUE: Parser les CPE et extraire produits affectés
+// Parses CPE strings and extracts affected products info
 
 export function normalizeAffectedProducts(configurations) {
     if (!configurations) return [];

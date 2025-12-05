@@ -1,18 +1,11 @@
-// Application/UseCases/ThreatAnalysisUseCase.js
-// Responsabilité UNIQUE: Orchestrer l'analyse de menaces pour un keyword et une période
+// Orchestrates threat analysis for keyword and date range
 
 import { NvdHttpCveGateway } from '../../Infrastructure/Gateways/gatewayNVD.js';
 import { EpssHttpCveGateway } from '../../Infrastructure/Gateways/gatewayEPSS.js';
 import { normalizeNvdData } from '../Normalizers/nvdNormalizer.js';
 import { calculateAverages, getTopCwes, sortByCvss, sortByEpss } from '../Services/ThreatStatsCalculator.js';
 
-/**
- * Execute threat analysis for a keyword and date range
- * @param {string} keyword - Search keyword
- * @param {Date} startDate - Start date
- * @param {Date} endDate - End date
- * @returns {Promise<Object>} - Analysis results with stats
- */
+// Execute threat analysis for a keyword and date range
 export async function executeThreatAnalysis(keyword, startDate, endDate) {
     // Initialize gateways
     const nvdGateway = new NvdHttpCveGateway();

@@ -1,9 +1,8 @@
-// src/UserInterface/Components/Input/CveInput.jsx
+// CVE input with autocomplete suggestions from NVD API
 
 import React, { useState, useEffect, useRef } from 'react';
+import { CVE_PATTERN } from '../../../Application/constants/messages.js';
 import './CveInput.css';
-
-const cvePattern = /^CVE-\d{4}-\d{4,}$/;
 
 export default function CveInput({ cveId, setCveId, onAnalyze, loading }) {
   const [suggestions, setSuggestions] = useState([]);
@@ -15,30 +14,26 @@ export default function CveInput({ cveId, setCveId, onAnalyze, loading }) {
     return parts[parts.length - 1].trim();
   };
 
-  // Check if we have at least one valid CVE
   const cveList = cveId.split(',').map(c => c.trim()).filter(c => c.length > 0);
-  const hasValidCve = cveList.some(c => cvePattern.test(c));
+  const hasValidCve = cveList.some(c => CVE_PATTERN.test(c));
   const isDisabled = loading || !hasValidCve;
 
-  // Fast autocomplete with API - only for the last CVE being typed
+  // Fetch autocomplete suggestions for the last CVE being typed
   useEffect(() => {
     const lastPart = getLastPart(cveId).toUpperCase();
 
-    // Cancel any in-flight request before starting another
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
       abortControllerRef.current = null;
     }
 
-    // Ignore short or already-complete CVEs (handled in onChange)
-    if (!lastPart || lastPart.length < 5 || cvePattern.test(lastPart)) {
+    if (!lastPart || lastPart.length < 5 || CVE_PATTERN.test(lastPart)) {
       return undefined;
     }
 
     const controller = new AbortController();
     abortControllerRef.current = controller;
 
-    // Fetch from NVD API immediately
     (async () => {
       try {
         const url = `https://services.nvd.nist.gov/rest/json/cves/2.0?keywordSearch=${lastPart}&resultsPerPage=10`;
@@ -49,7 +44,7 @@ export default function CveInput({ cveId, setCveId, onAnalyze, loading }) {
           if (data?.vulnerabilities) {
             let ids = data.vulnerabilities.map(v => v.cve.id);
 
-            // Sort: prioritize matches that start with input, then by CVE number descending
+            // Prioritize matches starting with input, then sort by CVE number descending
             ids.sort((a, b) => {
               const aStartsWith = a.startsWith(lastPart) ? 0 : 1;
               const bStartsWith = b.startsWith(lastPart) ? 0 : 1;
@@ -120,7 +115,7 @@ export default function CveInput({ cveId, setCveId, onAnalyze, loading }) {
               return;
             }
 
-            if (cvePattern.test(lastPart.toUpperCase())) {
+            if (CVE_PATTERN.test(lastPart.toUpperCase())) {
               setSuggestions([lastPart.toUpperCase()]);
               setShowSuggestions(true);
               return;

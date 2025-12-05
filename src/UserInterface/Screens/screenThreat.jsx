@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
-import './ThreatOverview.css';
+import './screenThreat.css';
 import { executeThreatAnalysis } from '../../Application/UseCases/ThreatAnalysisUseCase.js';
-import { getCache, setCache } from '../Services/CacheService.js';
-import CvssDistributionChart from '../Components/Charts/CvssDistributionChart.jsx';
-import EpssRiskChart from '../Components/Charts/EpssRiskChart.jsx';
-import TimelineChart from '../Components/Charts/TimelineChart.jsx';
-import CvssTrendChart from '../Components/Charts/CvssTrendChart.jsx';
+import { getCache, setCache } from '../Services/serviceCache.js';
+import CvssDistributionChart from '../Components/Charts/distributionChartCVSS.jsx';
+import EpssRiskChart from '../Components/Charts/riskChartEPSS.jsx';
+import TimelineChart from '../Components/Charts/chartTimeline.jsx';
+import CvssTrendChart from '../Components/Charts/trendChartCVSS.jsx';
 
 const getCacheKey = (kw, dur) => `threat:${kw}:${dur}`;
 

@@ -1,5 +1,5 @@
 import React from 'react';
-import DonutChart from '../Charts/DonutChart.jsx';
+import DonutChart from '../Charts/chartDonut.jsx';
 import { getSeverityColor, getSeverityLabel } from '../Display/cveDisplayUtils.js';
 
 export default function ScoreCard({ cvss, impact }) {

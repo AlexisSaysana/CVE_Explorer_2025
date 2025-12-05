@@ -1,10 +1,9 @@
-// UserInterface/Components/Display/cveDisplayLayout.jsx
-// Responsabilité UNIQUE: Affichage du layout CVE (composition des composants)
+// Renders CVE details with score cards, alerts, and related information
 
 import React from 'react';
-import ScoreCard from '../Cards/ScoreCard.jsx';
-import EpssCard from '../Cards/EpssCard.jsx';
-import KEVAlert from '../Alerts/KEVAlert.jsx';
+import ScoreCard from '../Cards/cardCVSS.jsx';
+import EpssCard from '../Cards/cardEPSS.jsx';
+import KEVAlert from '../Alerts/alertKEV.jsx';
 import './cveDisplay.css';
 
 export default function CveDisplayLayout({ data }) {
@@ -17,7 +16,6 @@ export default function CveDisplayLayout({ data }) {
         <p className="cve-published">Published: {data.published || 'N/A'}</p>
       </div>
 
-      {/* Description */}
       {data.description && (
         <div className="cve-card">
           <h3>Description</h3>
@@ -25,24 +23,28 @@ export default function CveDisplayLayout({ data }) {
         </div>
       )}
 
-      {/* Scores Section */}
       <div className="cve-scores-grid">
         <ScoreCard cvss={cvssObj} risk={data.risk} impact={data.impact} />
         <EpssCard epss={data.epss} />
       </div>
 
-      {/* KEV Alert */}
       {data.kev && <KEVAlert kev={data.kev} />}
 
-      {/* CWE Information */}
       {data.cwe && data.cwe.length > 0 ? (
         <div className="cve-card">
           <h3>Related CWE (Common Weakness Enumeration)</h3>
           <div className="cwe-list">
             {data.cwe.slice(0, 8).map((cwe, idx) => (
-              <span key={idx} className="cwe-badge">
+              <a 
+                key={idx} 
+                href={`https://cwe.mitre.org/data/definitions/${cwe.cweId.replace('CWE-', '')}.html`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="cwe-badge"
+                title={`View ${cwe.cweId} details on MITRE CWE`}
+              >
                 {cwe.cweId} — {cwe.cweName || 'Unknown'}
-              </span>
+              </a>
             ))}
           </div>
         </div>
@@ -53,7 +55,6 @@ export default function CveDisplayLayout({ data }) {
         </div>
       )}
 
-      {/* Affected Products */}
       {data.affectedProducts && data.affectedProducts.length > 0 && (
         <div className="cve-card">
           <h3>Affected Products</h3>
