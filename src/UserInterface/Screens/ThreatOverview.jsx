@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import './ThreatOverview.css';
-// import { searchCvesByKeyword, getFullCveData } from '../../Infrastructure/Cve';
-import { searchCvesByKeyword, getFullCveData } from '../../Infrastructure/Cve';
+import { NvdHttpCveGateway } from '../../Infrastructure/Gateways/gatewayNVD.js';
+import { EpssHttpCveGateway } from '../../Infrastructure/Gateways/gatewayEPSS.js';
+import { normalizeNvdData } from '../../Application/Normalizers/nvdNormalizer.js';
 
 // Cache utilities with TTL
 const setCache = (key, value, ttlSec = 600) => {
@@ -30,8 +31,6 @@ const getCache = (key) => {
 
 const getCacheKey = (kw, dur) => `threat:${kw}:${dur}`;
 
-// ThreatOverview: queries NVD for CVEs matching a keyword+period,
-// then aggregates CVSS/EPSS/KEV/CWE info for display.
 export default function ThreatOverview() {
   const [keyword, setKeyword] = useState('');
   const [duration, setDuration] = useState('3m');
@@ -39,9 +38,19 @@ export default function ThreatOverview() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
+  const getDurationFilter = (dur) => {
+    const end = new Date();
+    let start = new Date(end);
+    if (dur === '1m') start.setMonth(end.getMonth() - 1);
+    else if (dur === '3m') start.setMonth(end.getMonth() - 3);
+    else if (dur === '6m') start.setMonth(end.getMonth() - 6);
+    else if (dur === '1y') start.setFullYear(end.getFullYear() - 1);
+    return start;
+  };
+
   const handleRun = async () => {
     if (!keyword || keyword.trim().length === 0) {
-      setError('Entrez un mot-clé.');
+      setError('Veuillez entrer un mot-clé.');
       return;
     }
 
@@ -58,95 +67,79 @@ export default function ThreatOverview() {
     setData(null);
 
     try {
-      const end = new Date();
-      let start = new Date(end);
-      if (duration === '1m') start.setMonth(end.getMonth() - 1);
-      else if (duration === '3m') start.setMonth(end.getMonth() - 3);
-      else if (duration === '6m') start.setMonth(end.getMonth() - 6);
-      else if (duration === '1y') start.setFullYear(end.getFullYear() - 1);
+      // Calculate date range for API query
+      const endDate = new Date();
+      const startDate = getDurationFilter(duration);
+      
+      // Format dates for NVD API (ISO 8601 format: YYYY-MM-DDTHH:MM:SS.000)
+      const pubStartDate = startDate.toISOString().split('.')[0] + '.000';
+      const pubEndDate = endDate.toISOString().split('.')[0] + '.000';
 
-      const cveIds = await searchCvesByKeyword(keyword, {
-        startDate: start.toISOString().split('T')[0],
-        endDate: end.toISOString().split('T')[0],
-      });
+      // Fetch CVEs by keyword from NVD with date filtering
+      const nvdGateway = new NvdHttpCveGateway();
+      const rawVulnerabilities = await nvdGateway.searchByKeyword(keyword, pubStartDate, pubEndDate, 200);
 
-      if (!cveIds || cveIds.length === 0) {
-        setError('Aucune CVE trouvée pour ce mot-clé.');
+      if (!rawVulnerabilities || rawVulnerabilities.length === 0) {
+        setError(`Aucune CVE trouvée pour "${keyword}" dans cette période.`);
         setLoading(false);
         return;
       }
 
-      const sampleCveIds = cveIds.slice(0, 50);
-      const results = [];
-      const concurrency = 5;
-      for (let i = 0; i < sampleCveIds.length; i += concurrency) {
-        const batch = sampleCveIds.slice(i, i + concurrency);
-        const batchResults = await Promise.all(batch.map(id => getFullCveData(id)));
-        results.push(...batchResults);
-      }
+      const filteredByDate = rawVulnerabilities;
 
-      const validResults = results.filter(r => r !== null);
-      if (validResults.length === 0) {
-        setError('Impossible de récupérer les détails des CVEs.');
-        setLoading(false);
-        return;
-      }
+      // Normalize and enrich with CVSS scores
+      const enrichedCves = filteredByDate.map(v => {
+        const nvdData = normalizeNvdData(v.cve);
+        return {
+          id: v.cve.id,
+          cvss: nvdData?.cvss?.baseScore || 0,
+          description: nvdData?.description || '',
+          published: v.cve.published,
+          cwe: nvdData?.cwe?.[0]?.cweName || 'N/A',
+        };
+      });
 
-      const topCvss = validResults
-        .filter(r => r.cvssScore !== undefined)
-        .sort((a, b) => (b.cvssScore || 0) - (a.cvssScore || 0))
-        .slice(0, 10)
-        .map(r => ({ id: r.cveId, score: r.cvssScore }));
+      // Sort by CVSS score descending (highest first) and take top 10
+      const topByCvss = enrichedCves.sort((a, b) => b.cvss - a.cvss).slice(0, 10);
+      
+      // Fetch EPSS scores in parallel for the top 10
+      const epssGateway = new EpssHttpCveGateway();
+      const epssPromises = topByCvss.map(c => epssGateway.getScore(c.id).catch(() => null));
+      const epssScores = await Promise.all(epssPromises);
 
-      const topEpss = validResults
-        .filter(r => r.epssScore !== undefined)
-        .sort((a, b) => (b.epssScore || 0) - (a.epssScore || 0))
-        .slice(0, 10)
-        .map(r => ({ id: r.cveId, epss: r.epssScore }));
+      // Attach EPSS scores
+      const enrichedCvesWithEpss = topByCvss.map((c, idx) => ({
+        ...c,
+        epss: epssScores[idx]?.score || 0,
+      }));
 
-      const avgCvss = (validResults.reduce((sum, r) => sum + (r.cvssScore || 0), 0) / validResults.length).toFixed(2);
-      const avgEpss = (validResults.reduce((sum, r) => sum + (r.epssScore || 0), 0) / validResults.length).toFixed(2);
-
-      const cweMap = {};
-      validResults.forEach(r => {
-        if (r.cweList && Array.isArray(r.cweList)) {
-          r.cweList.forEach(cwe => {
-            cweMap[cwe.cweId] = (cweMap[cwe.cweId] || 0) + 1;
-          });
+      // Calculate aggregates
+      const avgCvss = (enrichedCvesWithEpss.reduce((sum, c) => sum + c.cvss, 0) / enrichedCvesWithEpss.length).toFixed(1);
+      const avgEpss = (enrichedCvesWithEpss.reduce((sum, c) => sum + c.epss, 0) / enrichedCvesWithEpss.length).toFixed(3);
+      const cweFreq = {};
+      enrichedCvesWithEpss.forEach(c => {
+        if (c.cwe !== 'N/A') {
+          cweFreq[c.cwe] = (cweFreq[c.cwe] || 0) + 1;
         }
       });
-      const sorted = Object.entries(cweMap).sort((a, b) => b[1] - a[1]);
-      const mostFreqCwe = sorted.length > 0 ? sorted[0][0] : 'N/A';
+      const mostFreqCwe = Object.keys(cweFreq).length > 0
+        ? Object.entries(cweFreq).sort((a, b) => b[1] - a[1])[0][0]
+        : 'N/A';
 
-      const kevCount = validResults.filter(r => r.isKev).length;
-
-      const monthMap = {};
-      validResults.forEach(r => {
-        if (r.published) {
-          const month = r.published.substring(0, 7);
-          if (!monthMap[month]) monthMap[month] = [];
-          monthMap[month].push(r.cvssScore || 0);
-        }
-      });
-      const trend = Object.keys(monthMap)
-        .sort()
-        .slice(-6)
-        .map(m => (monthMap[m].reduce((a, b) => a + b, 0) / monthMap[m].length).toFixed(2));
-
-      const aggregated = {
-        topCvss,
-        topEpss,
+      const summary = {
+        topCvss: enrichedCvesWithEpss,
+        topEpss: enrichedCvesWithEpss.slice().sort((a, b) => b.epss - a.epss),
         avgCvss,
         avgEpss,
         mostFreqCwe,
-        kevCount,
-        trend: trend.length > 0 ? trend : [0, 0, 0, 0, 0, 0],
+        kevCount: 0,
+        totalCves: filteredByDate.length,
       };
 
-      setData(aggregated);
-      setCache(cacheKey, aggregated, 600);
+      setData(summary);
+      setCache(cacheKey, summary, 600);
     } catch (err) {
-      console.error('❌ Threat Overview error:', err);
+      console.error('ThreatOverview error:', err);
       setError(`Erreur: ${err.message}`);
     } finally {
       setLoading(false);
@@ -155,6 +148,11 @@ export default function ThreatOverview() {
 
   return (
     <div className="threat-overview">
+      <div className="threat-header">
+        <h1>🎯 Threat Overview</h1>
+        <p>Analysez les tendances de CVEs par secteur ou produit</p>
+      </div>
+
       <div className="threat-controls">
         <label>
           Mot-clé&nbsp;:
@@ -162,7 +160,7 @@ export default function ThreatOverview() {
             type="text"
             value={keyword}
             onChange={(e) => setKeyword(e.target.value)}
-            placeholder="Ex: Oracle, Microsoft..."
+            placeholder="Ex: Oracle, Microsoft, Apache..."
           />
         </label>
         <label>
@@ -174,70 +172,71 @@ export default function ThreatOverview() {
             <option value="1y">1 an</option>
           </select>
         </label>
-        <button onClick={handleRun} disabled={loading} style={{ marginLeft: 8 }}>{loading ? 'Chargement...' : 'Analyser'}</button>
+        <button onClick={handleRun} disabled={loading}>
+          {loading ? 'Chargement...' : 'Analyser'}
+        </button>
       </div>
 
-      {error && <div className="threat-empty" style={{ background: '#ffecec' }}>{error}</div>}
+      <div className="threat-results">
+        {error && <div className="threat-empty error">⚠️ {error}</div>}
 
-      {!data && !error && (
-        <div className="threat-empty">Entrez un mot-clé et cliquez sur <strong>Analyser</strong> pour afficher l'aperçu.</div>
-      )}
+        {!data && !error && (
+          <div className="threat-empty">
+            Entrez un mot-clé et cliquez sur <strong>Analyser</strong> pour afficher l'aperçu des menaces.
+          </div>
+        )}
 
-      {data && (
-        <div className="threat-grid">
-          <section className="card">
-            <h3>🔥 Top 10 CVEs (CVSS)</h3>
-            <ol>
-              {data.topCvss.map((c) => (
-                <li key={c.id}>{c.id} — {Number(c.score).toFixed(1)}</li>
-              ))}
-            </ol>
-          </section>
+        {data && (
+          <div className="threat-grid">
+            <section className="card">
+              <h3>🔥 Top 10 CVEs (par CVSS)</h3>
+              <ol>
+                {data.topCvss.map((c) => (
+                  <li key={c.id}>
+                    <strong>{c.id}</strong> — Score {Number(c.cvss).toFixed(1)}/10
+                  </li>
+                ))}
+              </ol>
+            </section>
 
-          <section className="card">
-            <h3>💥 Top EPSS</h3>
-            <ol>
-              {data.topEpss.map((c) => (
-                <li key={c.id}>{c.id} — {Number(c.epss).toFixed(2)}</li>
-              ))}
-            </ol>
-          </section>
+            <section className="card">
+              <h3>💥 Top 10 EPSS (Exploitation)</h3>
+              <ol>
+                {data.topEpss.map((c) => (
+                  <li key={c.id}>
+                    <strong>{c.id}</strong> — Prob. {(Number(c.epss) * 100).toFixed(0)}%
+                  </li>
+                ))}
+              </ol>
+            </section>
 
-          <section className="card">
-            <h3>📈 Sévérité moyenne</h3>
-            <div className="big-value">{data.avgCvss ?? 'N/A'}</div>
-          </section>
+            <section className="card">
+              <h3>📊 CVSS Moyen</h3>
+              <div className="big-value">{data.avgCvss}</div>
+            </section>
 
-          <section className="card">
-            <h3>🧩 CWE la plus fréquente</h3>
-            <div className="big-value small">{data.mostFreqCwe}</div>
-          </section>
+            <section className="card">
+              <h3>📊 EPSS Moyen</h3>
+              <div className="big-value">{(Number(data.avgEpss) * 100).toFixed(0)}%</div>
+            </section>
 
-          <section className="card">
-            <h3>⚠️ CVE déjà exploitées (KEV)</h3>
-            <div className="big-value">{data.kevCount}</div>
-          </section>
+            <section className="card">
+              <h3>🧩 Faiblesse la plus fréquente</h3>
+              <div className="big-value small">{data.mostFreqCwe}</div>
+            </section>
 
-          <section className="card wide">
-            <h3>📊 Tendance CVSS sur la période</h3>
-            <div className="sparkline">
-              {data.trend.map((v, i) => (
-                <div className="bar" key={i} style={{ height: v ? `${(v/10)*100}%` : '6px', opacity: v ? 1 : 0.25 }} title={v ?? 'N/A'}></div>
-              ))}
-            </div>
-          </section>
+            <section className="card">
+              <h3>⚠️ CVE déjà exploitées (KEV)</h3>
+              <div className="big-value">{data.kevCount}</div>
+            </section>
 
-          <section className="card">
-            <h3>📐 Score CVSS moyen</h3>
-            <div className="big-value">{data.avgCvss ?? 'N/A'}</div>
-          </section>
-
-          <section className="card">
-            <h3>🎯 Score EPSS moyen</h3>
-            <div className="big-value">{data.avgEpss ?? 'N/A'}</div>
-          </section>
-        </div>
-      )}
+            <section className="card wide">
+              <h3>📈 Total CVEs trouvées</h3>
+              <div className="big-value">{data.totalCves}</div>
+            </section>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

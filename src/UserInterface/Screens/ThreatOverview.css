@@ -1,13 +1,188 @@
-.threat-overview { padding: 16px; }
-.threat-controls { display:flex; gap:12px; align-items:center; margin-bottom:14px; }
-.threat-controls label { font-size:14px; color:var(--text); }
-.threat-controls input, .threat-controls select { margin-left:6px; padding:6px 8px; border-radius:6px; border:1px solid rgba(0,0,0,0.12); }
-.threat-empty { color: #666; padding:24px; background: rgb(0, 0, 0); border-radius:8px; }
-.threat-grid { display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap:12px; margin-top:12px; }
-.card { background: #fff; padding:12px; border-radius:8px; box-shadow: 0 1px 2px rgb(0, 0, 0); color: #000; }
-.card.wide { grid-column: 1 / -1; }
-.card h3 { margin:0 0 8px 0; font-size:14px; }
-.big-value { font-size:28px; font-weight:700; }
-.big-value.small { font-size:14px; font-weight:600; }
-.sparkline { display:flex; align-items:flex-end; gap:6px; height:64px; }
-.sparkline .bar { width:14px; background: linear-gradient(180deg,#ffb74d,#d32f2f); border-radius:4px 4px 0 0; }
+/* ThreatOverview Screen Styling */
+.threat-overview {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* Header section */
+.threat-header {
+  text-align: center;
+  color: white;
+  padding: 25px 20px;
+  flex-shrink: 0;
+  background: rgba(0, 0, 0, 0.1);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.threat-header h1 {
+  font-size: 42px;
+  margin: 0 0 8px 0;
+  font-weight: 700;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.threat-header p {
+  font-size: 16px;
+  margin: 0;
+  opacity: 0.95;
+  font-weight: 300;
+}
+
+/* Controls section */
+.threat-controls {
+  flex-shrink: 0;
+  padding: 20px;
+  background: white;
+  border-bottom: 2px solid #e0e0e0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.threat-controls label {
+  font-size: 14px;
+  color: #333;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 500;
+}
+
+.threat-controls input,
+.threat-controls select {
+  padding: 8px 12px;
+  border-radius: 6px;
+  border: 1px solid #ddd;
+  font-size: 14px;
+  font-family: inherit;
+}
+
+.threat-controls input:focus,
+.threat-controls select:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.threat-controls button {
+  padding: 8px 16px;
+  background: #667eea;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: background 0.2s;
+}
+
+.threat-controls button:hover:not(:disabled) {
+  background: #764ba2;
+}
+
+.threat-controls button:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+}
+
+/* Results container */
+.threat-results {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 20px;
+  background: rgba(255, 255, 255, 0.98);
+}
+
+/* Empty state */
+.threat-empty {
+  color: #666;
+  padding: 40px 24px;
+  background: #f5f5f5;
+  border-radius: 8px;
+  text-align: center;
+  font-size: 15px;
+  border: 1px solid #e0e0e0;
+}
+
+.threat-empty.error {
+  background: #ffecec;
+  color: #c62828;
+  border-color: #ef5350;
+}
+
+/* Results grid */
+.threat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.card {
+  background: white;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  color: #333;
+  border: 1px solid #e0e0e0;
+}
+
+.card.wide {
+  grid-column: 1 / -1;
+}
+
+.card h3 {
+  margin: 0 0 16px 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
+}
+
+.card ol,
+.card ul {
+  margin: 0;
+  padding-left: 20px;
+}
+
+.card li {
+  margin: 8px 0;
+  font-size: 14px;
+  color: #555;
+}
+
+.card li strong {
+  color: #d32f2f;
+}
+
+.big-value {
+  font-size: 32px;
+  font-weight: 700;
+  color: #667eea;
+}
+
+.big-value.small {
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
+}
+
+.sparkline {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  height: 80px;
+}
+
+.sparkline .bar {
+  flex: 1;
+  background: linear-gradient(180deg, #ffb74d, #d32f2f);
+  border-radius: 4px 4px 0 0;
+  min-height: 6px;
+}
