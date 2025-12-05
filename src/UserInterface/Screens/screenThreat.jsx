@@ -210,11 +210,6 @@ export default function ThreatOverview() {
               <h3>⚠️ Known Exploited CVEs (KEV)</h3>
               <div className="big-value">{data.kevCount}</div>
             </section>
-
-            <section className="card wide">
-              <h3>📈 Total CVEs Found</h3>
-              <div className="big-value">{data.totalCves}</div>
-            </section>
           </div>
         )}
       </div>

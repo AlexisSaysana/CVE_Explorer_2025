@@ -4,6 +4,7 @@
   display: flex;
   flex-direction: column;
   gap: 12px;
+  width: 100%;
 }
 
 .upload-zone {
@@ -15,6 +16,7 @@
   background: #f8f9fb;
   cursor: pointer;
   transition: all 0.3s ease;
+  width: 100%;
 }
 
 .upload-zone:hover {
