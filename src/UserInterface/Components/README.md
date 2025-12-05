@@ -1,15 +1,72 @@
-# UI Components Map
+# UI Components
 
-Quick orientation for the CVE display area:
+Reusable React components organized by function. All are functional components using React 19 hooks.
 
-- `cveDisplay.jsx` — main composition: renders header, description, scores, KEV, CWE, products, references.
-- `ScoreCard.jsx` — CVSS card; uses `DonutChart.jsx` for the score ring and `cveDisplayUtils.js` for severity labels/colors.
-- `EpssCard.jsx` — EPSS card; formats the probability and (after update) will render a small ring.
-- `KEVAlert.jsx` — banner for Known Exploited Vulnerability.
-- `cveDisplayUtils.js` — helpers: severity color/label, formatters for CVSS/EPSS values.
-- Styles: `cveDisplay.css` for layout/cards; shared card styles are reused by score cards.
+## Directory Structure
 
-Data flow:
+```
+Components/
+├── Input/           # Data entry
+├── Display/         # CVE information presentation
+├── Cards/           # Summary metric cards
+├── Charts/          # Data visualization
+├── Alerts/          # Notifications and warnings
+└── Upload/          # Bulk import handling
+```
 
-- `HomeScreen.jsx` calls the use case, passes `data` into `cveDisplay.jsx`.
-- `cveDisplay.jsx` delegates to the cards (`ScoreCard`, `EpssCard`, `KEVAlert`) and lists (CWE, products, references).
+## Data Flow
+
+```
+Screen Component (screenExplorer.jsx or screenThreat.jsx)
+    ↓
+Use Case (ThreatAnalysisUseCase.js)
+    ↓
+Display Layout (cveDisplayLayout.jsx)
+    ├─ Card Components (cardCVSS.jsx, cardEPSS.jsx)
+    ├─ Alert Components (alertKEV.jsx)
+    ├─ Chart Components (chartDonut.jsx, trendChartCVSS.jsx, etc.)
+    └─ Reference Lists
+```
+
+## Component Categories
+
+### **Input/** - User Data Entry
+- `CveInput.jsx` - Single CVE search input
+- `readFile.jsx` - Bulk CVE file upload
+
+### **Display/** - CVE Information
+- `cveDisplayLayout.jsx` - Main CVE detail layout
+- `cveDisplay.jsx` - Individual CVE card
+- `cveDisplayUtils.js` - Shared helpers (colors, formatting)
+
+### **Cards/** - Metric Summary
+- `cardCVSS.jsx` - CVSS score and severity
+- `cardEPSS.jsx` - EPSS exploitation risk
+
+### **Charts/** - Data Visualization
+- `chartTimeline.jsx` - CVE publication timeline
+- `chartDonut.jsx` - Category distribution
+- `distributionChartCVSS.jsx` - CVSS severity breakdown
+- `trendChartCVSS.jsx` - CVSS trend over time
+- `riskChartEPSS.jsx` - EPSS risk distribution
+- `indicatorTrend.jsx` - Simple trend indicator
+
+### **Alerts/** - Notifications
+- `alertKEV.jsx` - CISA Known Exploited Vulnerabilities warning
+
+### **Upload/** - File Processing
+- `readFile.jsx` - File upload and CVE parsing
+
+## Styling Convention
+
+- Global styles: `src/index.css`
+- Component styles: `ComponentName.css` (co-located with component)
+- BEM naming for CSS classes
+- Responsive design for mobile and desktop
+
+## Key Patterns
+
+- **Props-driven**: All data passed via props
+- **No side effects**: Pure component logic where possible
+- **Error boundaries**: Each screen handles its own error states
+- **Loading states**: Consistent feedback during API calls
