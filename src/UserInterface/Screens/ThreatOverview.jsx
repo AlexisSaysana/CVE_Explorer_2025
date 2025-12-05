@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import './ThreatOverview.css';
 // import { searchCvesByKeyword, getFullCveData } from '../../Infrastructure/Cve';
+import { searchCvesByKeyword, getFullCveData } from '../../Infrastructure/Cve';
 
 // Cache utilities with TTL
 const setCache = (key, value, ttlSec = 600) => {
@@ -38,23 +39,12 @@ export default function ThreatOverview() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  const _durationToStart = (dur) => {
-    const end = new Date();
-    let start = new Date(end);
-    if (dur === '1m') start.setMonth(end.getMonth() - 1);
-    else if (dur === '3m') start.setMonth(end.getMonth() - 3);
-    else if (dur === '6m') start.setMonth(end.getMonth() - 6);
-    else if (dur === '1y') start.setFullYear(end.getFullYear() - 1);
-    return { start: start.toISOString(), end: end.toISOString() };
-  };
-
   const handleRun = async () => {
     if (!keyword || keyword.trim().length === 0) {
       setError('Entrez un mot-clé.');
       return;
     }
 
-    // Check cache first
     const cacheKey = getCacheKey(keyword, duration);
     const cached = getCache(cacheKey);
     if (cached) {
@@ -67,24 +57,100 @@ export default function ThreatOverview() {
     setError(null);
     setData(null);
 
-    const t = setTimeout(() => {
-      // Generate demo summary data (replace with real API/logic later)
-      const demo = {
-        topCvss: Array.from({ length: 10 }, (_, i) => ({ id: `CVE-2025-00${i+1}`, score: (10 - i) - Math.random()*0.8 })),
-        topEpss: Array.from({ length: 10 }, (_, i) => ({ id: `CVE-2024-0${i+1}`, epss: Math.random()*1.0 })),
-        avgCvss: (5 + Math.random()*4).toFixed(2),
-        avgEpss: (0.2 + Math.random()*0.7).toFixed(2),
-        mostFreqCwe: 'CWE-79: Cross-site scripting',
-        kevCount: Math.floor(Math.random()*12),
-        trend: Array.from({ length: 6 }, () => (4 + Math.random()*5).toFixed(2)),
-      };
-      setData(demo);
-      setLoading(false);
-      // Cache the result for 10 minutes (600 seconds)
-      setCache(cacheKey, demo, 600);
-    }, 300);
+    try {
+      const end = new Date();
+      let start = new Date(end);
+      if (duration === '1m') start.setMonth(end.getMonth() - 1);
+      else if (duration === '3m') start.setMonth(end.getMonth() - 3);
+      else if (duration === '6m') start.setMonth(end.getMonth() - 6);
+      else if (duration === '1y') start.setFullYear(end.getFullYear() - 1);
 
-    return () => clearTimeout(t);
+      const cveIds = await searchCvesByKeyword(keyword, {
+        startDate: start.toISOString().split('T')[0],
+        endDate: end.toISOString().split('T')[0],
+      });
+
+      if (!cveIds || cveIds.length === 0) {
+        setError('Aucune CVE trouvée pour ce mot-clé.');
+        setLoading(false);
+        return;
+      }
+
+      const sampleCveIds = cveIds.slice(0, 50);
+      const results = [];
+      const concurrency = 5;
+      for (let i = 0; i < sampleCveIds.length; i += concurrency) {
+        const batch = sampleCveIds.slice(i, i + concurrency);
+        const batchResults = await Promise.all(batch.map(id => getFullCveData(id)));
+        results.push(...batchResults);
+      }
+
+      const validResults = results.filter(r => r !== null);
+      if (validResults.length === 0) {
+        setError('Impossible de récupérer les détails des CVEs.');
+        setLoading(false);
+        return;
+      }
+
+      const topCvss = validResults
+        .filter(r => r.cvssScore !== undefined)
+        .sort((a, b) => (b.cvssScore || 0) - (a.cvssScore || 0))
+        .slice(0, 10)
+        .map(r => ({ id: r.cveId, score: r.cvssScore }));
+
+      const topEpss = validResults
+        .filter(r => r.epssScore !== undefined)
+        .sort((a, b) => (b.epssScore || 0) - (a.epssScore || 0))
+        .slice(0, 10)
+        .map(r => ({ id: r.cveId, epss: r.epssScore }));
+
+      const avgCvss = (validResults.reduce((sum, r) => sum + (r.cvssScore || 0), 0) / validResults.length).toFixed(2);
+      const avgEpss = (validResults.reduce((sum, r) => sum + (r.epssScore || 0), 0) / validResults.length).toFixed(2);
+
+      const cweMap = {};
+      validResults.forEach(r => {
+        if (r.cweList && Array.isArray(r.cweList)) {
+          r.cweList.forEach(cwe => {
+            cweMap[cwe.cweId] = (cweMap[cwe.cweId] || 0) + 1;
+          });
+        }
+      });
+      const sorted = Object.entries(cweMap).sort((a, b) => b[1] - a[1]);
+      const mostFreqCwe = sorted.length > 0 ? sorted[0][0] : 'N/A';
+
+      const kevCount = validResults.filter(r => r.isKev).length;
+
+      const monthMap = {};
+      validResults.forEach(r => {
+        if (r.published) {
+          const month = r.published.substring(0, 7);
+          if (!monthMap[month]) monthMap[month] = [];
+          monthMap[month].push(r.cvssScore || 0);
+        }
+      });
+      const trend = Object.keys(monthMap)
+        .sort()
+        .slice(-6)
+        .map(m => (monthMap[m].reduce((a, b) => a + b, 0) / monthMap[m].length).toFixed(2));
+
+      const aggregated = {
+        topCvss,
+        topEpss,
+        avgCvss,
+        avgEpss,
+        mostFreqCwe,
+        kevCount,
+        trend: trend.length > 0 ? trend : [0, 0, 0, 0, 0, 0],
+      };
+
+      setData(aggregated);
+      setCache(cacheKey, aggregated, 600);
+    } catch (err) {
+      console.error('❌ Threat Overview error:', err);
+      setError(`Erreur: ${err.message}`);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
