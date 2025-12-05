@@ -1,0 +1,13 @@
+.threat-overview { padding: 16px; }
+.threat-controls { display:flex; gap:12px; align-items:center; margin-bottom:14px; }
+.threat-controls label { font-size:14px; color:var(--text); }
+.threat-controls input, .threat-controls select { margin-left:6px; padding:6px 8px; border-radius:6px; border:1px solid rgba(0,0,0,0.12); }
+.threat-empty { color: #666; padding:24px; background: rgb(0, 0, 0); border-radius:8px; }
+.threat-grid { display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap:12px; margin-top:12px; }
+.card { background: #fff; padding:12px; border-radius:8px; box-shadow: 0 1px 2px rgb(0, 0, 0); color: #000; }
+.card.wide { grid-column: 1 / -1; }
+.card h3 { margin:0 0 8px 0; font-size:14px; }
+.big-value { font-size:28px; font-weight:700; }
+.big-value.small { font-size:14px; font-weight:600; }
+.sparkline { display:flex; align-items:flex-end; gap:6px; height:64px; }
+.sparkline .bar { width:14px; background: linear-gradient(180deg,#ffb74d,#d32f2f); border-radius:4px 4px 0 0; }

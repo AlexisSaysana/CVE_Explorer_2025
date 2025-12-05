@@ -218,3 +218,31 @@ export const checkKevCve = fetchKEV;
  * Utility: build a direct NVD URL for a CVE
  */
 export const getNvdUrl = (cveId) => `https://nvd.nist.gov/vuln/detail/${cveId}`;
+
+/**
+ * Search NVD for CVE IDs matching a free-text keyword within a publish date range.
+ * @param {string} keyword
+ * @param {{start: string, end: string}} opts - ISO date strings for pubStartDate and pubEndDate
+ * @returns {Promise<string[]>} array of CVE IDs
+ */
+export async function searchCvesByKeyword(keyword, opts = {}) {
+    if (!keyword || typeof keyword !== 'string') return [];
+    const params = new URLSearchParams();
+    params.set('keywordSearch', keyword);
+    if (opts.start) params.set('pubStartDate', opts.start);
+    if (opts.end) params.set('pubEndDate', opts.end);
+
+    try {
+        const url = `https://services.nvd.nist.gov/rest/json/cves/2.0?${params.toString()}`;
+        const resp = await fetch(url);
+        if (!resp.ok) return [];
+        const data = await resp.json();
+        if (!data.vulnerabilities || data.vulnerabilities.length === 0) return [];
+        const ids = data.vulnerabilities.map(v => v.cve?.id || v.cve?.CVE_data_meta?.ID).filter(Boolean);
+        // return unique IDs
+        return Array.from(new Set(ids));
+    } catch (err) {
+        console.error('❌ searchCvesByKeyword failed:', err);
+        return [];
+    }
+}

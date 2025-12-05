@@ -10,6 +10,7 @@ import { processBulkCves } from '../../Application/Services/BulkCveProcessor.js'
 import ReadFile from '../ReadFile.jsx';
 import { parseCveList } from '../Services/CveValidator.js';
 import { extractCvesFromRows } from '../Services/FileParser.js';
+import ThreatOverview from './ThreatOverview.jsx';
 import './HomeScreen.css';
 
 // Helper utility for color
@@ -22,6 +23,7 @@ function getSeverityColor(score) {
 }
 
 export default function HomeScreen() {
+  const [activeTab, setActiveTab] = useState('explore');
   const [cveId, setCveId] = useState('');
   const [cveData, setCveData] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -109,22 +111,28 @@ export default function HomeScreen() {
       <div className="hero-section">
         <h1>CVE Explorer</h1>
         <p>Analyze and visualize Common Vulnerabilities and Exposures</p>
+        <div className="tabs">
+          <button className={activeTab === 'explore' ? 'active' : ''} onClick={() => setActiveTab('explore')}>Explorer</button>
+          <button className={activeTab === 'threat' ? 'active' : ''} onClick={() => setActiveTab('threat')}>Threat Overview</button>
+        </div>
       </div>
 
       <div className="content-wrapper">
-        <div className="upload-section">
-          <ReadFile onData={handleUploaded} />
-        </div>
-        <div className="input-section">
-          <CveInput
-            cveId={cveId}
-            setCveId={setCveId}
-            onAnalyze={handleAnalyze}
-            loading={loading}
-          />
-        </div>
+        {activeTab === 'explore' && (
+          <>
+            <div className="upload-section">
+              <ReadFile onData={handleUploaded} />
+            </div>
+            <div className="input-section">
+              <CveInput
+                cveId={cveId}
+                setCveId={setCveId}
+                onAnalyze={handleAnalyze}
+                loading={loading}
+              />
+            </div>
 
-        <div className="results-section">
+            <div className="results-section">
           {/* Single CVE Results */}
           {(cveData || loading || error) && (
             <div className="single-cve-results">
@@ -210,7 +218,15 @@ export default function HomeScreen() {
               <p>⚠️ {bulkError}</p>
             </div>
           )}
-        </div>
+            </div>
+          </>
+        )}
+
+        {activeTab === 'threat' && (
+          <div className="threat-section">
+            <ThreatOverview />
+          </div>
+        )}
       </div>
     </div>
   );
