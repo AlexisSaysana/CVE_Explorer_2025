@@ -1,9 +1,17 @@
-// UseCases module
-// This file provides application-level helpers and a use-case-compatible API
-// It must not access the DOM directly — UI layer handles DOM interactions.
+// Application/UseCases.js
+// Responsabilité UNIQUE: Orchestrer les gateways, normalizers et services pour l'analyse CVE
 
-import { fetchNvdCve, fetchEpssCve, checkKevCve, getNvdUrl } from '../Infrastructure/Cve.js';
+import { NvdHttpCveGateway } from '../Infrastructure/Gateways/gatewayNVD.js';
+import { EpssHttpCveGateway } from '../Infrastructure/Gateways/gatewayEPSS.js';
+import { KevHttpCveGateway } from '../Infrastructure/Gateways/gatewayKEV.js';
+import { normalizeNvdData } from './Normalizers/nvdNormalizer.js';
+import { calculateRisk } from './Services/RiskCalculator.js';
 import { CVE_NOT_FOUND, INVALID_CVE_FORMAT } from './constants/messages.js';
+
+// Instantiate gateways
+const nvdGateway = new NvdHttpCveGateway();
+const epssGateway = new EpssHttpCveGateway();
+const kevGateway = new KevHttpCveGateway();
 
 export function isValidCveCode(cveCode) {
     if (typeof cveCode !== 'string' || cveCode.trim() === '') return false;
@@ -16,63 +24,44 @@ async function analyzeCve(cveId) {
         throw new Error(INVALID_CVE_FORMAT);
     }
 
-    const [nvdResult, epssResult, kevResult] = await Promise.all([
-        fetchNvdCve(cveId).catch(err => ({ error: String(err) })),
-        fetchEpssCve(cveId).catch(() => null),
-        checkKevCve(cveId).catch(() => null),
+    const cleanId = cveId.trim().toUpperCase();
+
+    // Fetch from all 3 sources in parallel
+    const [nvdRaw, epssData, kevData] = await Promise.all([
+        nvdGateway.getRawData(cleanId).catch(err => {
+            console.error('NVD error:', err);
+            return null;
+        }),
+        epssGateway.getScore(cleanId).catch(() => null),
+        kevGateway.getStatus(cleanId).catch(() => null),
     ]);
 
-    // If NVD returned null, the CVE probably does not exist -> surface a user-facing error
-    if (!nvdResult || (nvdResult && nvdResult.error)) {
+    // If NVD doesn't return anything, CVE doesn't exist
+    if (!nvdRaw) {
         throw new Error(CVE_NOT_FOUND);
     }
 
-    const data = {
-        id: cveId,
-        nvd: nvdResult && !nvdResult.error ? nvdResult : null,
-        epss: epssResult || null,
-        kev: kevResult || null,
-        urls: { nvd: getNvdUrl(cveId) },
-    };
+    // Normalize NVD data
+    const nvdData = normalizeNvdData(nvdRaw);
 
-    // Determine risk using available numeric values
-    const risk = (function calc(nvd, epss, kev) {
-        let score = 0;
-        // nvd may expose normalized `cvss` object or legacy `cvssScore` value
-        const nvdScore = nvd?.cvss?.baseScore ?? nvd?.cvssScore?.baseScore ?? nvd?.cvssScore ?? null;
-        if (typeof nvdScore === 'number') score += nvdScore;
-        if (epss && typeof epss.score === 'number') score += epss.score * 5;
-        if (kev) score += 3;
-        const normalizedScore = Math.min(10, Math.round((score / 12) * 10));
-        let level = 'Low';
-        if (normalizedScore >= 8) level = 'Critical';
-        else if (normalizedScore >= 6) level = 'High';
-        else if (normalizedScore >= 4) level = 'Medium';
-        return { score: normalizedScore, level };
-    })(data.nvd, data.epss, data.kev);
+    // Calculate risk score
+    const risk = calculateRisk(nvdData, epssData, !!kevData);
 
-    // Flatten the shape to match what the UI components expect
+    // Build the final flattened view model for UI
     const flattened = {
-        id: data.id,
-        description: data.nvd?.description || data.nvd?.technical?.description || null,
-        published: data.nvd?.published || data.nvd?.technical?.published || null,
-        // Normalize CVSS to an object with baseScore and vector
-        cvssScore: (function () {
-                const raw = data.nvd?.cvss ?? data.nvd?.cvssScore ?? null;
-                if (!raw) return null;
-                if (typeof raw === 'number') return { baseScore: raw, vector: data.nvd?.cvssVector || null };
-                if (typeof raw === 'object' && raw.baseScore !== undefined) return raw;
-                return null;
-        })(),
-        // EPSS can be null or {score}
-        epssScore: data.epss?.score ?? null,
-        epss: data.epss || null,
-        cwe: data.nvd?.cwe || [],
-        affectedProducts: data.nvd?.affectedProducts || [],
-        references: data.nvd?.references || [],
-        kev: data.kev ? (typeof data.kev === 'boolean' ? { exploited: data.kev } : data.kev) : null,
-        urls: data.urls,
+        id: cleanId,
+        description: nvdData?.description || null,
+        published: nvdData?.published || null,
+        cvssScore: nvdData?.cvss || null,
+        epssScore: epssData?.score ?? null,
+        epss: epssData || null,
+        cwe: nvdData?.cwe || [],
+        affectedProducts: nvdData?.affectedProducts || [],
+        references: nvdData?.references || [],
+        kev: kevData ? { exploited: true, ...kevData } : null,
+        urls: { nvd: getNvdUrl(cleanId) },
         risk,
+        impact: nvdData?.impact || null,
     };
 
     return flattened;
@@ -81,5 +70,10 @@ async function analyzeCve(cveId) {
 export const analyzeCveUseCase = {
     execute: analyzeCve,
 };
+
+/**
+ * Utility: build a direct NVD URL for a CVE
+ */
+export const getNvdUrl = (cveId) => `https://nvd.nist.gov/vuln/detail/${cveId}`;
 
 export default analyzeCveUseCase;

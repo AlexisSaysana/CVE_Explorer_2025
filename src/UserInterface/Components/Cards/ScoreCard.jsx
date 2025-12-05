@@ -2,7 +2,7 @@ import React from 'react';
 import DonutChart from '../Charts/DonutChart.jsx';
 import { getSeverityColor, getSeverityLabel } from '../Display/cveDisplayUtils.js';
 
-export default function ScoreCard({ cvss, risk, impact }) {
+export default function ScoreCard({ cvss, impact }) {
   const score = cvss?.baseScore ?? null;
   const vector = cvss?.vector ?? null;
   const severity = score !== null ? getSeverityLabel(score) : (cvss?.severity || 'N/A');

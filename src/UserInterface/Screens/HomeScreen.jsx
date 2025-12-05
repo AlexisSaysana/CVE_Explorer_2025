@@ -1,11 +1,25 @@
-// src/UserInterface/HomeScreen.jsx
+// src/UserInterface/Screens/HomeScreen.jsx
+// Responsabilité UNIQUE: Orchestrer l'UI (input, display, upload)
+// Délègue la logique métier aux services
 
 import React, { useState } from 'react';
 import CveInput from '../Components/Input/CveInput.jsx';
 import CveDisplay from '../Components/Display/cveDisplay.jsx';
 import { analyzeCveUseCase } from '../../Application/UseCases.js';
+import { processBulkCves } from '../../Application/Services/BulkCveProcessor.js';
 import ReadFile from '../ReadFile.jsx';
+import { parseCveList } from '../Services/CveValidator.js';
+import { extractCvesFromRows } from '../Services/FileParser.js';
 import './HomeScreen.css';
+
+// Helper utility for color
+function getSeverityColor(score) {
+  if (typeof score !== 'number') return '#388e3c';
+  if (score >= 9) return '#d32f2f';
+  if (score >= 7) return '#f57c00';
+  if (score >= 4) return '#fbc02d';
+  return '#388e3c';
+}
 
 export default function HomeScreen() {
   const [cveId, setCveId] = useState('');
@@ -25,19 +39,15 @@ export default function HomeScreen() {
       return;
     }
 
-    // Parse multiple CVEs separated by commas
-    const cveList = cveId
-      .split(',')
-      .map(c => c.trim())
-      .filter(c => /^CVE-\d{4}-\d{4,}$/i.test(c))
-      .map(c => c.toUpperCase());
+    // Parse and validate CVE list
+    const cveList = parseCveList(cveId);
 
     if (cveList.length === 0) {
       setError('Please enter valid CVE ID(s).');
       return;
     }
 
-    // If single CVE, show in main display. If multiple, show as bulk results
+    // If single CVE, show in main display; if multiple, show as bulk
     if (cveList.length === 1) {
       setLoading(true);
       setError(null);
@@ -62,21 +72,8 @@ export default function HomeScreen() {
   };
 
   const handleUploaded = (rows) => {
-    // Extract CVE IDs from the uploaded file
-    // Try to find cells matching CVE-XXXX-XXXX pattern
-    const cvePattern = /CVE-\d{4}-\d{4,}/i;
-    const foundCves = new Set();
-    
-    rows.forEach((row) => {
-      row.forEach((cell) => {
-        const match = cell.match(cvePattern);
-        if (match) {
-          foundCves.add(match[0].toUpperCase());
-        }
-      });
-    });
-
-    const cveArray = Array.from(foundCves);
+    // Extract CVE IDs from uploaded file
+    const cveArray = extractCvesFromRows(rows);
     setBulkCveList(cveArray);
     setBulkResults([]);
     setBulkError(null);
@@ -97,27 +94,7 @@ export default function HomeScreen() {
     setBulkResults([]);
 
     try {
-      // Analyze with limited concurrency to stay under API rate limits while keeping speed
-      const concurrency = 5;
-      const results = new Array(cveArray.length);
-      let cursor = 0;
-
-      const worker = async () => {
-        while (true) {
-          const myIndex = cursor++;
-          if (myIndex >= cveArray.length) break;
-          const cveId = cveArray[myIndex];
-          try {
-            const data = await analyzeCveUseCase.execute(cveId);
-            results[myIndex] = { cveId, data, error: null };
-          } catch (err) {
-            results[myIndex] = { cveId, data: null, error: err.message };
-          }
-        }
-      };
-
-      const workers = Array.from({ length: Math.min(concurrency, cveArray.length) }, () => worker());
-      await Promise.all(workers);
+      const results = await processBulkCves(cveArray, analyzeCveUseCase, 5);
       setBulkResults(results);
     } catch (err) {
       console.error('Bulk analysis error:', err);
@@ -237,13 +214,4 @@ export default function HomeScreen() {
       </div>
     </div>
   );
-}
-
-// Helper to determine severity color (copied from cveDisplayUtils)
-function getSeverityColor(score) {
-  if (typeof score !== 'number') return '#388e3c';
-  if (score >= 9) return '#d32f2f';
-  if (score >= 7) return '#f57c00';
-  if (score >= 4) return '#fbc02d';
-  return '#388e3c';
 }
