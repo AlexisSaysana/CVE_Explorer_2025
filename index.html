@@ -1,13 +1,57 @@
 <!doctype html>
 <html lang="en">
   <head>
+    <!-- Character encoding and viewport -->
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>cve</title>
+    
+    <!-- Title and description -->
+    <title>CVE Explorer - Real-time Vulnerability Analysis | NVD, EPSS, KEV</title>
+    <meta name="description" content="CVE Explorer: Analyze and visualize Common Vulnerabilities and Exposures with real-time data from NVD, EPSS (FIRST), and CISA KEV. Built for security professionals." />
+    <meta name="keywords" content="CVE, vulnerability, security, NVD, EPSS, KEV, CVSS, threat intelligence, cybersecurity" />
+    <meta name="author" content="CVE Explorer Team - Nuit de l'Info 2025" />
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect fill='%235568d3' width='100' height='100'/><text x='50' y='65' font-size='70' font-weight='bold' text-anchor='middle' fill='white'>⚠️</text></svg>" />
+    
+    <!-- Open Graph (Social Media) -->
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="CVE Explorer - Real-time Vulnerability Analysis" />
+    <meta property="og:description" content="Analyze and visualize CVE vulnerabilities with real-time data from NVD, EPSS, and CISA KEV" />
+    <meta property="og:url" content="https://cve-explorer.example.com" />
+    
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="CVE Explorer - Real-time Vulnerability Analysis" />
+    <meta name="twitter:description" content="Explore vulnerabilities with NVD, EPSS, and CISA KEV integration" />
+    
+    <!-- Theme color for browser UI -->
+    <meta name="theme-color" content="#5568d3" />
+    <meta name="msapplication-TileColor" content="#5568d3" />
+    
+    <!-- Security headers -->
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="referrer" content="strict-origin-when-cross-origin" />
+    
+    <!-- Preconnect to external resources for faster loading -->
+    <link rel="preconnect" href="https://services.nvd.nist.gov" />
+    <link rel="preconnect" href="https://api.first.org" />
+    <link rel="preconnect" href="https://www.cisa.gov" />
   </head>
   <body>
+    <!-- React root element -->
     <div id="root"></div>
+    
+    <!-- Loading screen (shown while React loads) -->
+    <div class="loader" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(135deg, #5568d3 0%, #764ba2 100%); display: flex; justify-content: center; align-items: center; z-index: 9999;">
+      <div class="loader-container">
+        <div class="spinner"></div>
+        <div class="loader-text">CVE Explorer</div>
+        <div class="loader-subtext">Loading vulnerability data...</div>
+      </div>
+    </div>
+    
+    <!-- React application entry point -->
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>
