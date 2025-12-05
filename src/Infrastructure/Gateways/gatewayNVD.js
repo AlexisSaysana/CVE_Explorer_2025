@@ -1,5 +1,7 @@
 // Fetches data from NVD API with retry logic and optional API key support
 
+import { retryWithBackoff } from '../Utils/retryWithBackoff.js';
+
 const getNvdApiKey = () => {
   return import.meta.env.VITE_NVD_API_KEY || null;
 };
@@ -22,19 +24,10 @@ const buildNvdUrl = (params) => {
 };
 
 async function fetchNVDApi(cveId) {
-    const maxRetries = 5;
-    let lastError;
-    
-    for (let attempt = 1; attempt <= maxRetries; attempt++) {
-        try {
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 10000);
-            
+    try {
+        return await retryWithBackoff(async (signal) => {
             const url = buildNvdUrl({ cveId });
-            
-            const response = await fetch(url, { signal: controller.signal });
-            
-            clearTimeout(timeoutId);
+            const response = await fetch(url, { signal });
             
             if (!response.ok) {
                 throw new Error(`HTTP ${response.status}`);
@@ -45,30 +38,16 @@ async function fetchNVDApi(cveId) {
             if (data.vulnerabilities.length === 0) return null;
             
             return data.vulnerabilities[0].cve;
-        } catch (error) {
-            lastError = error;
-            console.warn(`❌ NVD Attempt ${attempt}/${maxRetries} failed:`, error.message);
-            
-            if (attempt < maxRetries) {
-                const delay = Math.pow(2, attempt - 1) * 500;
-                await new Promise(resolve => setTimeout(resolve, delay));
-            }
-        }
+        });
+    } catch (error) {
+        console.error(`❌ NVD API failed for ${cveId}:`, error.message);
+        return null;
     }
-    
-    console.error(`❌ NVD API failed after ${maxRetries} attempts for ${cveId}:`, lastError);
-    return null;
 }
 
 async function fetchNVDApiKeywordSearch(keyword, pubStartDate, pubEndDate, resultsPerPage = 100) {
-    const maxRetries = 5;
-    let lastError;
-    
-    for (let attempt = 1; attempt <= maxRetries; attempt++) {
-        try {
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 10000);
-            
+    try {
+        return await retryWithBackoff(async (signal) => {
             const params = {
                 keywordSearch: keyword,
                 resultsPerPage: resultsPerPage.toString(),
@@ -81,10 +60,7 @@ async function fetchNVDApiKeywordSearch(keyword, pubStartDate, pubEndDate, resul
             }
             
             const url = buildNvdUrl(params);
-            
-            const response = await fetch(url, { signal: controller.signal });
-            
-            clearTimeout(timeoutId);
+            const response = await fetch(url, { signal });
             
             if (!response.ok) {
                 throw new Error(`HTTP ${response.status}`);
@@ -92,19 +68,11 @@ async function fetchNVDApiKeywordSearch(keyword, pubStartDate, pubEndDate, resul
             
             const data = await response.json();
             return data.vulnerabilities || [];
-        } catch (error) {
-            lastError = error;
-            console.warn(`❌ NVD Keyword Search Attempt ${attempt}/${maxRetries} failed:`, error.message);
-            
-            if (attempt < maxRetries) {
-                const delay = Math.pow(2, attempt - 1) * 500;
-                await new Promise(resolve => setTimeout(resolve, delay));
-            }
-        }
+        });
+    } catch (error) {
+        console.error('❌ NVD Keyword Search failed:', error.message);
+        return [];
     }
-    
-    console.error(`❌ NVD Keyword Search failed after ${maxRetries} attempts:`, lastError);
-    return [];
 }
 
 export class NvdHttpCveGateway {

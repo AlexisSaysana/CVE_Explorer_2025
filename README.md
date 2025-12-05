@@ -467,17 +467,10 @@ This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) 
 ## 👥 Team
 
 **Nuit de l'Info 2025** - CVE Explorer Team
-
----
-
-## 🙏 Acknowledgments
-
-- **NVD (NIST)** - CVE data and CVSS scores
-- **FIRST** - EPSS exploitation predictions
-- **CISA** - Known Exploited Vulnerabilities catalog
-- **MITRE** - CWE weakness enumeration
-- **React Team** - Amazing framework
-- **Vite Team** - Lightning-fast build tool
+This challenge was done by the following participants of Nuit de l'Info 2025 : 
+- **Alexis SAYSANA** (BUT3 Informatique)
+- **Axel LI** (BUT1 Informatique)
+- **Léonard WANG** (BUT1 Informatique)
 
 ---
 
@@ -523,6 +516,9 @@ echo "VITE_NVD_API_KEY=your_key_here" > .env
 git pull --rebase origin main
 git push origin main
 ```
+
+### Other known issues
+**Problem:** Web application can be slow because of the API retrieving data.
 
 ---
 
