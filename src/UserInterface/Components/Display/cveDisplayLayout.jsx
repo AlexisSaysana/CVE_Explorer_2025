@@ -57,14 +57,29 @@ export default function CveDisplayLayout({ data }) {
       {data.affectedProducts && data.affectedProducts.length > 0 && (
         <div className="cve-card">
           <h3>Affected Products</h3>
-          <ul className="product-list">
-            {data.affectedProducts.slice(0, 5).map((product, idx) => (
-              <li key={idx}>{product}</li>
+          <div className="product-grid">
+            {data.affectedProducts.slice(0, 8).map((product, idx) => (
+              <div key={idx} className="product-card">
+                <div className="product-info">
+                  <span className="product-vendor">{product.vendor}</span>
+                  <span className="product-name">{product.product}</span>
+                  <span className="product-version">{product.version}{product.versionRange}</span>
+                </div>
+                <a 
+                  href={`https://nvd.nist.gov/vuln/search/results?form_type=Advanced&cpe_vendor=cpe:/:${product.vendor}&cpe_product=cpe:/:${product.product}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="product-link"
+                  title="Search on NVD"
+                >
+                  🔍 Details
+                </a>
+              </div>
             ))}
-            {data.affectedProducts.length > 5 && (
-              <li className="more-items">+{data.affectedProducts.length - 5} more</li>
-            )}
-          </ul>
+          </div>
+          {data.affectedProducts.length > 8 && (
+            <div className="more-products">+{data.affectedProducts.length - 8} more products affected</div>
+          )}
         </div>
       )}
 

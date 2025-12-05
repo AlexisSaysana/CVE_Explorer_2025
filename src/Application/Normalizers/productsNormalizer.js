@@ -4,7 +4,7 @@
 export function normalizeAffectedProducts(configurations) {
     if (!configurations) return [];
     
-    const products = new Set();
+    const products = [];
     configurations.forEach(config => {
         config.nodes?.forEach(node => {
             node.cpeMatch?.forEach(match => {
@@ -15,12 +15,23 @@ export function normalizeAffectedProducts(configurations) {
                         const vendor = parts[3] || '';
                         const product = parts[4] || '';
                         const version = parts[5] || '';
-                        products.add(`${vendor}:${product}:${version}`);
+                        const versionRange = match.versionEndIncluding || match.versionEndExcluding 
+                            ? ` (up to ${match.versionEndIncluding || match.versionEndExcluding})`
+                            : '';
+                        
+                        products.push({
+                            vendor,
+                            product,
+                            version: version === '*' ? 'all versions' : version,
+                            versionRange,
+                            cpe,
+                            displayName: `${vendor}:${product}${version !== '*' ? ':' + version : ''}${versionRange}`
+                        });
                     }
                 }
             });
         });
     });
     
-    return Array.from(products).slice(0, 10);
+    return products.slice(0, 10);
 }
