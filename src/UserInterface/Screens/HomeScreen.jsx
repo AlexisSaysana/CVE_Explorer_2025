@@ -7,7 +7,7 @@ import CveInput from '../Components/Input/CveInput.jsx';
 import CveDisplay from '../Components/Display/cveDisplay.jsx';
 import { analyzeCveUseCase } from '../../Application/UseCases.js';
 import { processBulkCves } from '../../Application/Services/BulkCveProcessor.js';
-import ReadFile from '../ReadFile.jsx';
+import ReadFile from '../Components/Upload/ReadFile.jsx';
 import { parseCveList } from '../Services/CveValidator.js';
 import { extractCvesFromRows } from '../Services/FileParser.js';
 import './HomeScreen.css';

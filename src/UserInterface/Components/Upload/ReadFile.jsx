@@ -100,25 +100,26 @@ export default function ReadFile({ onData }) {
               </>
             )}
           </p>
-          <input
-            ref={fileInputRef}
-            type="file"
-            className="file-input"
-            accept=".csv,.tsv,.txt"
-            onChange={handleFileInput}
-          />
         </div>
+
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept=".csv,.tsv,.txt"
+          onChange={handleFileInput}
+          className="file-input"
+        />
       </div>
 
       {error && (
         <div className="upload-error">
-          <span>⚠️ {error}</span>
+          ⚠️ {error}
         </div>
       )}
 
       {fileName && !error && (
         <div className="upload-success">
-          <span>✓ File loaded. Scroll down to see results.</span>
+          ✅ File ready: <strong>{fileName}</strong>
         </div>
       )}
     </div>
